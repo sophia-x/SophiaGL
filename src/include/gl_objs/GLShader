@@ -1,0 +1,47 @@
+#ifndef GL_SHADER_H
+#define GL_SHADER_H
+
+#include <tools/shader_loader>
+
+#include <debug>
+
+namespace gl
+{
+
+class GLShader final {
+public:
+	static shared_ptr<GLShader> getShader(const string &vertex_path, const string &fragment_path, const vector<string>& names) {
+		return shared_ptr<GLShader>(new GLShader(vertex_path, fragment_path, names));
+	}
+
+	~GLShader() {
+		glDeleteProgram(program_ID);
+	}
+
+	void useShader() const {
+		glUseProgram(program_ID);
+	}
+
+	GLuint getUniform(const string &key) const {
+		return uniforms.at(key);
+	}
+
+private:
+	GLuint program_ID;
+	unordered_map<string, GLuint> uniforms;
+
+private:
+	GLShader(const string &vertex_path, const string &fragment_path, const vector<string>& names) {
+		program_ID = load_shader(vertex_path, fragment_path);
+
+		for (const string &name : names) {
+			uniforms[name] = glGetUniformLocation(program_ID, name.c_str());
+		}
+	}
+
+	GLShader(GLShader& obj) {}
+};
+
+}
+
+#endif

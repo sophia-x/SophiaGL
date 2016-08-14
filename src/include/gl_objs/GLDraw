@@ -1,0 +1,78 @@
+#ifndef GL_DRAW_H
+#define GL_DRAW_H
+
+#include <debug>
+
+namespace gl{
+
+class GLDraw {
+public:
+	virtual ~GLDraw() {}
+
+	virtual void draw(GLuint first, GLsizei dis2end) const = 0;
+
+protected:
+	GLDraw(const GLBuffer& p_buffer, GLenum p_mode): buffer{p_buffer}, mode{p_mode} {}
+
+protected:
+	GLenum mode;
+	const GLBuffer& buffer;
+};
+
+class GLArrayDraw: public GLDraw {
+public:
+	static shared_ptr<GLDraw> getDrawObj(const GLBuffer& p_buffer, GLenum p_mode) {
+		return shared_ptr<GLDraw>(new GLArrayDraw(p_buffer, p_mode));
+	}
+
+	virtual ~GLArrayDraw() {}
+
+	virtual void draw(GLuint first, GLsizei dis2end) const {
+		glDrawArrays(mode, first, buffer.size() - dis2end);
+	}
+
+protected:
+	GLArrayDraw(const GLBuffer& p_buffer, GLenum p_mode): GLDraw{p_buffer, p_mode} {}
+};
+
+class GLInstanceDraw: public GLDraw {
+public:
+	static shared_ptr<GLDraw> getDrawObj(const GLBuffer& p_buffer, GLenum p_mode, const size_t& p_count) {
+		return shared_ptr<GLDraw>(new GLInstanceDraw(p_buffer, p_mode, p_count));
+	}
+
+	virtual ~GLInstanceDraw() {}
+
+	virtual void draw(GLuint first, GLsizei dis2end) const {
+		glDrawArraysInstanced(mode, first, buffer.size() - dis2end, prim_count);
+	}
+
+protected:
+	GLInstanceDraw(const GLBuffer& p_buffer, GLenum p_mode, const size_t& p_count): GLDraw{p_buffer, p_mode}, prim_count{p_count} {}
+
+protected:
+	const size_t& prim_count;
+};
+
+class GLElementDraw: public GLDraw {
+public:
+	static shared_ptr<GLDraw> getDrawObj(const GLBuffer& p_buffer, GLenum p_mode, GLenum p_type = GL_UNSIGNED_SHORT) {
+		return shared_ptr<GLDraw>(new GLElementDraw(p_buffer, p_mode, p_type));
+	}
+
+	virtual ~GLElementDraw() {}
+
+	virtual void draw(GLuint first, GLsizei dis2end) const {
+		glDrawElements(mode, buffer.size() - dis2end, type, (const GLvoid*) first);
+	}
+
+protected:
+	GLElementDraw(const GLBuffer& p_buffer, GLenum p_mode, GLenum p_type): GLDraw{p_buffer, p_mode}, type{p_type} {}
+
+protected:
+	GLenum type;
+};
+
+}
+
+#endif

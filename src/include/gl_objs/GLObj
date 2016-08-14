@@ -1,0 +1,102 @@
+#ifndef GL_OBJ_H
+#define GL_OBJ_H
+
+#include <unordered_map>
+#include <string>
+using namespace std;
+
+#include <SOIL.h>
+
+#include <debug>
+
+#include "GLBuffer"
+#include "GLDraw"
+
+namespace gl
+{
+
+class GLObj final {
+public:
+	static shared_ptr<GLObj> getGLObj() {
+		return shared_ptr<GLObj>(new GLObj());
+	}
+
+	~GLObj() {
+		glDeleteVertexArrays(1, &vertex_array_ID);
+
+		for (auto it = textures.begin(); it != textures.end(); it++) {
+			glDeleteTextures(1, &(it->second));
+		}
+	}
+
+	void addBuffer(const string& key, shared_ptr<GLBuffer>& p_buffer) {
+		buffers[key] = p_buffer;
+	}
+
+	void addTexture(const string& key, const string& path, unsigned int flag = SOIL_FLAG_TEXTURE_REPEATS |
+	                SOIL_FLAG_MIPMAPS | SOIL_FLAG_POWER_OF_TWO) {
+		GLuint texture = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, flag);
+		if (0 == texture) {
+			const char* error = SOIL_last_result();
+			fprintf(stderr, "SOIL loading error: '%s'\n", error);
+			throw "Add texture: can not load texture error";
+		}
+
+		textures[key] = texture;
+	}
+
+	void addDrawObj(const string& key, shared_ptr<GLDraw>& draw_obj) {
+		draw_objs[key] = draw_obj;
+	}
+
+	GLuint getTexture(const string& key) const {
+		return textures.at(key);
+	}
+
+	const GLBuffer& getBuffer(const string& key) const {
+		return *buffers.at(key);
+	}
+
+	void setData(const string& key, void* data, size_t size) {
+		(*buffers.at(key)).setData(data, size);
+	}
+
+	void appendData(const string& key, void* data, size_t size) {
+		(*buffers.at(key)).appendData(data, size);
+	}
+
+	void bufferData(const vector<string>& keys) const {
+		for (const string& key : keys) {
+			(*buffers.at(key)).bufferData();
+		}
+	}
+
+	void draw(const vector<string>& keys, const vector<GLuint>& targets, const string& draw_key, GLuint first = 0, GLsizei dis2end = 0) {
+		for (size_t i = 0; i < keys.size(); i++) {
+			(*buffers.at(keys[i])).bind(targets[i]);
+		}
+
+		(*draw_objs.at(draw_key)).draw(first, dis2end);
+
+		for (size_t i = 0; i < keys.size(); i++) {
+			(*buffers.at(keys[i])).unbind(targets[i]);
+		}
+	}
+
+private:
+	GLuint vertex_array_ID;
+	unordered_map<string, shared_ptr<GLBuffer> > buffers;
+	unordered_map<string, GLuint> textures;
+	unordered_map<string, shared_ptr<GLDraw>> draw_objs;
+
+private:
+	GLObj() {
+		glGenVertexArrays(1, &vertex_array_ID);
+	}
+
+	GLObj(GLObj& obj) {}
+};
+
+}
+
+#endif

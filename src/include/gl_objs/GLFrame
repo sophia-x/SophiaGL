@@ -1,0 +1,125 @@
+#ifndef GL_FRAME_H
+#define GL_FRAME_H
+
+#include <glm/glm.hpp>
+using namespace glm;
+
+#include <debug>
+
+namespace gl {
+
+class GLFrame {
+public:
+	virtual ~GLFrame() {
+		glDeleteFramebuffers(1, &frame_buffer);
+		glDeleteTextures(1, &buffer_texture);
+	}
+
+	virtual GLuint getTexture(size_t type) const {
+		return buffer_texture;
+	}
+
+	virtual void useFrameBuffer() const {
+		glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+	}
+
+	virtual void unuseFrameBuffer() const {
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	virtual void init(vec2 size) {
+		glGenFramebuffers(1, &frame_buffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+
+		glGenTextures(1, &buffer_texture);
+		glBindTexture(GL_TEXTURE_2D, buffer_texture);
+
+		setUpTexture(size);
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			fprintf(stderr, "Cann't set up depth map!\n");
+			throw "Frame: can not generate frame error";
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	virtual void setUpTexture(vec2 size) = 0;
+
+protected:
+	GLuint frame_buffer;
+	GLuint buffer_texture;
+
+protected:
+	GLFrame() {}
+
+	GLFrame(GLFrame& obj) {}
+};
+
+class GLDepthFrame: public GLFrame {
+public:
+	static shared_ptr<GLFrame> getFrame(vec2 size) {
+		shared_ptr<GLFrame> ptr(new GLDepthFrame());
+		ptr->init(size);
+		return ptr;
+	}
+
+	virtual ~GLDepthFrame() {}
+
+	virtual void setUpTexture(vec2 size) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, size[0], size[1], 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, buffer_texture, 0);
+		glDrawBuffer(GL_NONE);
+	}
+
+protected:
+	GLDepthFrame() {}
+	GLDepthFrame(GLDepthFrame& obj) {}
+};
+
+class GLTextureFrame: public GLFrame {
+public:
+	static shared_ptr<GLFrame> getFrame(vec2 size) {
+		shared_ptr<GLFrame> ptr(new GLTextureFrame());
+		ptr->init(size);
+		return ptr;
+	}
+
+	virtual ~GLTextureFrame() {
+		glDeleteRenderbuffers(1, &depth_buffer);
+	}
+
+	virtual void setUpTexture(vec2 size) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glGenRenderbuffers(1, &depth_buffer);
+		glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, size[0], size[1]);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer_texture, 0);
+		GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, DrawBuffers);
+	}
+
+protected:
+	GLTextureFrame() {}
+	GLTextureFrame(GLTextureFrame& obj) {}
+
+protected:
+	GLuint depth_buffer;
+};
+
+}
+
+#endif
