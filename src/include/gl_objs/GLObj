@@ -5,7 +5,7 @@
 #include <string>
 using namespace std;
 
-#include <SOIL.h>
+#include <tools/texture_loader>
 
 #include <debug>
 
@@ -29,23 +29,16 @@ public:
 		}
 	}
 
-	void addBuffer(const string& key, shared_ptr<GLBuffer>& p_buffer) {
+	void addBuffer(const string& key, const shared_ptr<GLBuffer>& p_buffer) {
+		p_buffer->bufferData();
 		buffers[key] = p_buffer;
 	}
 
-	void addTexture(const string& key, const string& path, unsigned int flag = SOIL_FLAG_TEXTURE_REPEATS |
-	                SOIL_FLAG_MIPMAPS | SOIL_FLAG_POWER_OF_TWO) {
-		GLuint texture = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, flag);
-		if (0 == texture) {
-			const char* error = SOIL_last_result();
-			fprintf(stderr, "SOIL loading error: '%s'\n", error);
-			throw "Add texture: can not load texture error";
-		}
-
-		textures[key] = texture;
+	void addTexture(const string& key, const string& path) {
+		textures[key] = TextureLoader::loadTexture(path);
 	}
 
-	void addDrawObj(const string& key, shared_ptr<GLDraw>& draw_obj) {
+	void addDrawObj(const string& key, const shared_ptr<GLDraw>& draw_obj) {
 		draw_objs[key] = draw_obj;
 	}
 
@@ -71,7 +64,13 @@ public:
 		}
 	}
 
+	const void* getData(const string& key, size_t& length) const {
+		return buffers.at(key)->getData(length);
+	};
+
 	void draw(const vector<string>& keys, const vector<GLuint>& targets, const string& draw_key, GLuint first = 0, GLsizei dis2end = 0) {
+		glBindVertexArray(vertex_array_ID);
+
 		for (size_t i = 0; i < keys.size(); i++) {
 			(*buffers.at(keys[i])).bind(targets[i]);
 		}
@@ -81,6 +80,8 @@ public:
 		for (size_t i = 0; i < keys.size(); i++) {
 			(*buffers.at(keys[i])).unbind(targets[i]);
 		}
+
+		glBindVertexArray(0);
 	}
 
 private:
@@ -94,7 +95,8 @@ private:
 		glGenVertexArrays(1, &vertex_array_ID);
 	}
 
-	GLObj(GLObj& obj) {}
+	GLObj(const GLObj& obj);
+	GLObj& operator=(const GLObj& obj);
 };
 
 }

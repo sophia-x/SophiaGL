@@ -1,0 +1,133 @@
+#ifndef WINDOW_MANAGER_H
+#define WINDOW_MANAGER_H
+
+#include <mutex>
+#include <stack>
+#include <unordered_map>
+#include <memory>
+using namespace std;
+
+#include <gl_objs/GLHeader>
+
+#include <camera/Camera>
+
+#include "Scene"
+
+namespace gl
+{
+
+class WindowManager final {
+public:
+	static WindowManager& getWindowManager();
+
+	~WindowManager() {
+		glfwTerminate();
+	}
+
+	// Must called after setCurrent
+	void turnGlewOn();
+
+	// Must called after turnGlewOn()
+	void turnDebugOn(void APIENTRY(*p_debugOutputCallback)(GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar*, const void*));
+
+	void addWindow(const string &key, GLFWwindow* window) {
+		windows[key] = window;
+	}
+
+	void setCurrent(const string &key) {
+		current_window = windows.at(key);
+		current_name = key;
+		glfwMakeContextCurrent(current_window);
+	}
+
+	void pushCamera(const shared_ptr<Camera>& camera_ptr) {
+		camera_ptr->init();
+		cameras.push(camera_ptr);
+	}
+
+	void popCamera() {
+		if (cameras.empty())
+			throw "Pop camera: no camera error";
+		cameras.pop();
+
+		if (!cameras.empty())
+			cameras.top()->init();
+	}
+
+	const shared_ptr<Camera>& currentCamera() {
+		if (cameras.empty())
+			throw "Top camera: no camera error";
+		return cameras.top();
+	}
+
+	void addTool(const string& key, const shared_ptr<ToolModel>& tool) {
+		tools[key] = tool;
+	}
+
+	const shared_ptr<ToolModel>& currentTool(const string& key) {
+		return tools.at(key);
+	}
+
+	void addScene(const string& key, const shared_ptr<Scene>& scene) {
+		scenes[key].push_back(scene);
+	}
+
+	const vector<shared_ptr<Scene>>& getScenes(const string& key) {
+		return scenes.at(key);
+	}
+
+	GLFWwindow* getCurrentWindow() const {
+		return current_window;
+	}
+
+	void step(float delta, const vector<string>& keys = vector<string> {}) {
+		currentCamera()->update(delta);
+		for (const shared_ptr<Scene>& scene_ptr : scenes.at(current_name))
+			scene_ptr->update(delta);
+		for (const string& key : keys)
+			currentTool(key)->update(delta);
+
+		for (const shared_ptr<Scene>& scene_ptr : scenes.at(current_name))
+			scene_ptr->draw();
+		for (const string& key : keys)
+			currentTool(key)->draw();
+	}
+
+	bool next() const {
+		// Swap buffers
+		glfwSwapBuffers(current_window);
+		// Clear the screen
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glfwPollEvents();
+
+		return glfwGetKey(current_window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(current_window) == 0;
+	}
+
+private:
+	static unique_ptr<WindowManager> manager_ptr;
+	static once_flag created;
+private:
+	WindowManager();
+	WindowManager(const WindowManager& src);
+	WindowManager& operator=(const WindowManager& rhs);
+
+private:
+	unordered_map<string, GLFWwindow*> windows;
+	stack<shared_ptr<Camera>> cameras;
+	unordered_map<string, vector<shared_ptr<Scene>>> scenes;
+	unordered_map<string, shared_ptr<ToolModel>> tools;
+
+	string current_name;
+	GLFWwindow* current_window;
+};
+
+namespace Helper {
+
+GLFWwindow* createWindow(unsigned int width, unsigned int height, const string &title);
+void opengl_init(vec4 bg_color);
+
+}
+
+}
+
+#endif

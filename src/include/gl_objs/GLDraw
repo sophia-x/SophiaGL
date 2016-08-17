@@ -3,6 +3,8 @@
 
 #include <debug>
 
+#include "GLBuffer"
+
 namespace gl{
 
 class GLDraw {

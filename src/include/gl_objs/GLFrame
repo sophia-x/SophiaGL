@@ -1,6 +1,12 @@
 #ifndef GL_FRAME_H
 #define GL_FRAME_H
 
+#include <stdio.h>
+#include <memory>
+using namespace std;
+
+#include "GLHeader"
+
 #include <glm/glm.hpp>
 using namespace glm;
 
@@ -53,7 +59,9 @@ protected:
 protected:
 	GLFrame() {}
 
-	GLFrame(GLFrame& obj) {}
+private:
+	GLFrame(const GLFrame& obj);
+	GLFrame& operator=(const GLFrame& obj);
 };
 
 class GLDepthFrame: public GLFrame {
@@ -80,7 +88,10 @@ public:
 
 protected:
 	GLDepthFrame() {}
-	GLDepthFrame(GLDepthFrame& obj) {}
+
+private:
+	GLDepthFrame(const GLDepthFrame& obj);
+	GLDepthFrame& operator=(const GLDepthFrame& obj);
 };
 
 class GLTextureFrame: public GLFrame {
@@ -114,10 +125,13 @@ public:
 
 protected:
 	GLTextureFrame() {}
-	GLTextureFrame(GLTextureFrame& obj) {}
 
 protected:
 	GLuint depth_buffer;
+
+private:
+	GLTextureFrame(const GLTextureFrame& obj);
+	GLTextureFrame& operator=(const GLTextureFrame& obj);
 };
 
 }

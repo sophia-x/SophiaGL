@@ -1,0 +1,28 @@
+#ifndef OBJ_LOADER_H
+#define OBJ_LOADER_H
+
+#include <vector>
+using namespace std;
+
+#include <glm/glm.hpp>
+using namespace glm;
+
+namespace ObjLoader
+{
+
+void load_obj(const string& path, vector<unsigned short>& indices, vector<vec3>& vertices, vector<vec2>& uvs, vector<vec3>& normals);
+
+void computeTangentBasis(
+    // inputs
+    const vector<unsigned short>& indices,
+    const vector<vec3>& vertices,
+    const vector<vec2>& uvs,
+    const vector<vec3>& normals,
+    // outputs
+    vector<vec3>& tangents,
+    vector<vec3>& bitangents
+);
+
+}
+
+#endif

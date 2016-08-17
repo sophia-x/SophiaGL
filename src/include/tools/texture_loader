@@ -1,0 +1,16 @@
+#ifndef TEXTURE_LOADER
+#define TEXTURE_LOADER
+
+#include <gl_objs/GLHeader>
+
+#include <string>
+using namespace std;
+
+namespace TextureLoader
+{
+
+GLuint loadTexture(const string &texture_path);
+
+}
+
+#endif

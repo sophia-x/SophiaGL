@@ -1,0 +1,13 @@
+#ifndef DEMO_H
+#define DEMO_H
+
+#define WIDTH 1024
+#define HEIGHT 768
+#define WINDOW_NAME "Main_window"
+#define BG_COLOR vec4(0.0, 0.0, 0.4, 0.0)
+
+void standard_demo();
+void rotation_demo();
+void normal_mapping_demo();
+
+#endif

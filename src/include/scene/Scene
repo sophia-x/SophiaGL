@@ -1,0 +1,94 @@
+#ifndef SCENE_H
+#define SCENE_H
+
+#include <string>
+#include <unordered_map>
+using namespace std;
+
+#include <gl_objs/GLShader>
+
+#include "Light"
+#include "Model"
+
+namespace gl
+{
+
+class Scene {
+public:
+	virtual ~Scene() {}
+
+	virtual void addModel(const string& key, const shared_ptr<Model>& model) {
+		models[key] = model;
+	}
+
+	virtual void update(float delta) = 0;
+
+	virtual void draw() const = 0;
+
+protected:
+	Scene(const shared_ptr<GLShader>& p_shader, const vec4& p_border): shader_ptr{p_shader}, border{p_border} {}
+
+protected:
+	shared_ptr<GLShader> shader_ptr;
+	vec4 border;
+	unordered_map<string, shared_ptr<Model>> models;
+};
+
+class StandardScene: public Scene {
+public:
+	static shared_ptr<Scene> getScene(const vec4& p_border, const PointLight& p_light,
+	                                  const string &vertex_path = "shaders/StandardShading.vertexshader",
+	                                  const string &fragment_path = "shaders/StandardShading.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"MVP",
+		"V",
+		"M",
+		"light_position_worldspace",
+		"texture_in",
+		"light_color",
+		"light_power",
+		"material_ambient_color_ratio",
+		"material_specular_color",
+		"material_specular_ratio"
+	}) {
+		return shared_ptr<Scene>(new StandardScene(GLShader::getShader(vertex_path, fragment_path, uniforms), p_border, p_light));
+	}
+
+	static shared_ptr<Scene> getScene(const shared_ptr<GLShader>& p_shader, const vec4& p_border, const PointLight& p_light) {
+		return shared_ptr<Scene>(new StandardScene(p_shader, p_border, p_light));
+	}
+
+	virtual void update(float delta) {
+		light.update(delta);
+		for (auto it = models.begin(); it != models.end(); it++)
+			it->second->update(delta);
+	}
+
+	virtual void draw() const {
+		glViewport(border[0], border[1], border[2], border[3]);
+		shader_ptr->useShader();
+		{
+			light.setUniforms(vector<GLuint>
+			{
+				shader_ptr->getUniform("light_position_worldspace"),
+				shader_ptr->getUniform("light_color"),
+				shader_ptr->getUniform("light_power")
+			});
+
+			for (auto it = models.begin(); it != models.end(); it++)
+				it->second->draw(shader_ptr);
+		}
+		shader_ptr->unuseShader();
+	}
+
+protected:
+	StandardScene(const shared_ptr<GLShader>& p_shader, const vec4& p_border, const PointLight& p_light):
+		Scene{p_shader, p_border}, light{p_light} {}
+
+protected:
+	PointLight light;
+};
+
+}
+
+#endif

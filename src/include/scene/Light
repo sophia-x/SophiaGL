@@ -1,0 +1,47 @@
+#ifndef LIGHT_H
+#define LIGHT_H
+
+#include <vector>
+using namespace std;
+
+#include <gl_objs/GLHeader>
+
+#include "Spirit"
+
+namespace gl
+{
+
+class Light: public Spirit {
+public:
+	Light(const vec3& p_color, float p_power, const vec3& p_pos, const quat& p_orig, const vec3& p_size, float p_life, bool p_immoral):
+		color{p_color}, power{p_power}, Spirit{p_pos, p_orig, p_size, p_life, p_immoral} {}
+
+	virtual ~Light() {}
+
+	virtual const vec3& getColor() const {
+		return color;
+	}
+
+	virtual void setUniforms(const vector<GLuint>& ids) const = 0;
+
+protected:
+	vec3 color;
+	float power;
+};
+
+class PointLight: public Light {
+public:
+	PointLight(const vec3 &p_position, const vec3 &p_color, float p_power, float p_life = 0, bool p_immoral = true):
+		Light{p_color, p_power, p_position, quat(), vec3(1), p_life, p_immoral} {}
+
+	void setUniforms(const vector<GLuint>& ids) const {
+		glUniform3f(ids[0], position.x, position.y, position.z);
+		glUniform3f(ids[1], color.x, color.y, color.z);
+		glUniform1f(ids[2], power);
+	}
+};
+
+
+}
+
+#endif

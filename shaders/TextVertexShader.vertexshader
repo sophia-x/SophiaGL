@@ -1,0 +1,19 @@
+#version 330 core
+
+layout(location = 0) in vec2 vertex_position_screenspace;
+layout(location = 1) in vec2 vertex_UV;
+
+out vec2 UV;
+
+uniform int half_width;
+uniform int half_height;
+
+void main(){
+
+	vec2 vertex_position_homoneneousspace = vertex_position_screenspace - vec2(half_width,half_height);
+	vertex_position_homoneneousspace /= vec2(half_width,half_height);
+	gl_Position =  vec4(vertex_position_homoneneousspace,-1.0,1);
+	
+	UV = vertex_UV;
+}
+

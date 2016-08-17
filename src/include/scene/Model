@@ -1,0 +1,145 @@
+#ifndef MODEL_H
+#define MODEL_H
+
+#include <gl_objs/GLObj>
+#include <gl_objs/GLShader>
+
+#include "ModelSpirit"
+
+namespace gl
+{
+
+class Model {
+public:
+	virtual ~Model() {}
+
+	virtual void addSpirit(const shared_ptr<BaseModelSpirit>& spirit) {
+		spirits.push_back(spirit);
+	}
+
+	virtual void update(float delta) {
+		for (shared_ptr<BaseModelSpirit>& spirit_ptr : spirits)
+			spirit_ptr->spirit().update(delta);
+	}
+
+	const void* getData(const string& key, size_t& length) const {
+		return gl_obj->getData(key, length);
+	};
+
+	virtual	void setData(const string& key, void* data, size_t size) {
+		gl_obj->setData(key, data, size);
+	}
+
+	void bufferData(const vector<string>& keys) const {
+		gl_obj->bufferData(keys);
+	}
+
+	virtual const GLObj& getGLObj() const {
+		return *gl_obj;
+	}
+
+	virtual void draw(const shared_ptr<GLShader>& shader_ptr) const = 0;
+
+protected:
+	Model(const shared_ptr<GLObj>& p_obj): gl_obj{p_obj} {}
+
+protected:
+	shared_ptr<GLObj> gl_obj;
+
+	vector<shared_ptr<BaseModelSpirit>> spirits;
+};
+
+class StandardModel: public Model {
+public:
+	static shared_ptr<StandardModel> getModel(const string& obj_path, const vector<pair<string, string>>& p_textures);
+
+	virtual void draw(const shared_ptr<GLShader>& shader_ptr) const;
+
+protected:
+	StandardModel(const shared_ptr<GLObj>& p_obj): Model{p_obj} {}
+};
+
+class NormalMappingModel: public Model {
+public:
+	static shared_ptr<NormalMappingModel> getModel(const string& obj_path, const vector<pair<string, string>>& p_textures);
+
+	virtual void draw(const shared_ptr<GLShader>& shader_ptr) const;
+
+protected:
+	NormalMappingModel(const shared_ptr<GLObj>& p_obj): Model{p_obj} {}
+};
+
+class ToolModel: public Model {
+public:
+	virtual ~ToolModel() {}
+	virtual void draw() = 0;
+
+protected:
+	ToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border): Model{p_obj},
+		shader_ptr{p_shader}, border{p_border} {}
+
+private:
+	void draw(const shared_ptr<GLShader>& shader_ptr) const {}
+protected:
+	shared_ptr<GLShader> shader_ptr;
+	vec4 border;
+};
+
+class TextToolModel: public ToolModel {
+public:
+	static shared_ptr<TextToolModel> getTool(const vec4& p_border, const vec2& p_size, const string& texture_path = "textures/Holstein.DDS",
+	        const string &vertex_path = "shaders/TextVertexShader.vertexshader",
+	        const string &fragment_path = "shaders/TextVertexShader.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"half_width",
+		"half_height",
+		"texture_in"
+	});
+
+	virtual ~TextToolModel() {}
+
+	virtual void print_text(const string& text, int x, int y, int size);
+
+	virtual void clear() {
+		gl_obj->setData("Vertices", 0, 0);
+		gl_obj->setData("Uvs", 0, 0);
+
+		change = true;
+	}
+
+	virtual void draw();
+
+protected:
+	TextToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, const vec2& p_size):
+		ToolModel{p_obj, p_shader, p_border}, size{p_size}, change{false} {}
+
+private:
+	vec2 size;
+	bool change;
+};
+
+class PassthroughMvpToolModel: public ToolModel {
+public:
+	static shared_ptr<PassthroughMvpToolModel> getTool(const vec4& p_border, const vec3& p_color, GLenum p_mode,
+	        const string &vertex_path = "shaders/PassthroughMVP.vertexshader",
+	        const string &fragment_path = "shaders/PassthroughMVP.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"COLOR",
+		"MVP"
+	});
+
+	virtual ~PassthroughMvpToolModel() {}
+
+	virtual void draw();
+
+protected:
+	PassthroughMvpToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, const vec3& p_color):
+		ToolModel{p_obj, p_shader, p_border}, color{p_color} {}
+
+private:
+	vec3 color;
+};
+
+}
+
+#endif

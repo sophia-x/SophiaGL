@@ -4,7 +4,7 @@ using namespace std;
 
 #include <tools/shader_loader>
 
-namespace gl
+namespace ShaderLoader
 {
 
 static GLuint __load_shader(const string &file_path, GLenum shader_type);

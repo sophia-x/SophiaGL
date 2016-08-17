@@ -1,0 +1,82 @@
+#ifndef MODEL_SPIRIT_H
+#define MODEL_SPIRIT_H
+
+
+#include "Material"
+#include "Spirit"
+
+namespace gl
+{
+
+class BaseModelSpirit {
+public:
+	static shared_ptr<BaseModelSpirit> getModelSpirit(const shared_ptr<Spirit>& p_spirit) {
+		return shared_ptr<BaseModelSpirit>(new BaseModelSpirit(p_spirit));
+	}
+
+	virtual Spirit& spirit() {
+		return *spirit_ptr;
+	}
+
+protected:
+	BaseModelSpirit(const shared_ptr<Spirit>& p_spirit): spirit_ptr{p_spirit} {}
+
+protected:
+	shared_ptr<Spirit> spirit_ptr;
+};
+
+class StandardModelSpirit: public BaseModelSpirit {
+public:
+	static shared_ptr<StandardModelSpirit> getModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, GLuint p_texture_id,
+	        const PhoneMaterial& p_material)
+	{
+		return shared_ptr<StandardModelSpirit>(new StandardModelSpirit(p_spirit_ptr, p_texture_id, p_material));
+	}
+
+	const PhoneMaterial& getMaterial() const {
+		return material;
+	}
+
+	const GLuint getTexture() const {
+		return texture_id;
+	}
+
+protected:
+	StandardModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, GLuint p_texture_id, const PhoneMaterial& p_material):
+		BaseModelSpirit{p_spirit_ptr}, texture_id{p_texture_id}, material{p_material} {}
+
+protected:
+	GLuint texture_id;
+	const PhoneMaterial& material;
+};
+
+class NormalMappingModelSpirit: public StandardModelSpirit {
+public:
+	static shared_ptr<NormalMappingModelSpirit> getModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, GLuint p_diffuse_id,
+	        GLuint p_normal_id, GLuint p_specular_id, const PhoneMaterial& p_material)
+	{
+		return shared_ptr<NormalMappingModelSpirit>(new NormalMappingModelSpirit(p_spirit_ptr, p_diffuse_id, p_normal_id,
+		        p_specular_id, p_material));
+	}
+
+	const GLuint getNormalTexture() const {
+		return normal_id;
+	}
+
+	const GLuint getSpecularTexture() const {
+		return specular_id;
+	}
+
+protected:
+	NormalMappingModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, GLuint p_diffuse_id, GLuint p_normal_id, GLuint p_specular_id,
+	                         const PhoneMaterial& p_material):
+		StandardModelSpirit{p_spirit_ptr, p_diffuse_id, p_material}, normal_id{p_normal_id}, specular_id{p_specular_id} {}
+
+protected:
+	GLuint normal_id, specular_id;
+};
+
+}
+
+
+#endif

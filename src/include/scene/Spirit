@@ -1,0 +1,71 @@
+#ifndef SPIRIT_H
+#define SPIRIT_H
+
+#include <memory>
+using namespace std;
+
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/transform.hpp>
+using namespace glm;
+
+namespace gl
+{
+
+class Spirit {
+public:
+	static shared_ptr<Spirit> getMortalSpirit(float p_life, const vec3& p_pos = vec3(), const quat& p_orig = quat(),
+	        const vec3& p_size = vec3(1))
+	{
+		return shared_ptr<Spirit>(new Spirit(p_pos, p_orig, p_size, p_life, false));
+	}
+
+	static shared_ptr<Spirit> getImmortalSpirit(const vec3& p_pos = vec3(), const quat& p_orig = quat(), const vec3& p_size = vec3(1)) {
+		return shared_ptr<Spirit>(new Spirit(p_pos, p_orig, p_size, 0, true));
+	}
+
+	virtual mat4 getModelMatrix() const {
+		mat4 rotation_matrix = mat4_cast(origentation);
+		mat4 translation_matrix = translate(mat4(), position);
+		mat4 scaling_matrix = scale(mat4(), size);
+		mat4 model_matrix = translation_matrix * rotation_matrix * scaling_matrix;
+
+		return model_matrix;
+	}
+
+	virtual const vec3& getPos() {
+		return position;
+	}
+
+	virtual void update(float delta) {
+		if (!immortal && life > 0)
+			life -= delta;
+	}
+
+	virtual bool alive() const {
+		return immortal || life > 0;
+	}
+
+	virtual void setPos(const vec3& p_pos) {
+		position = p_pos;
+	}
+
+	virtual void setOrig(const quat& p_orig) {
+		origentation = p_orig;
+	}
+
+protected:
+	Spirit(const vec3& p_pos, const quat& p_orig, const vec3& p_size, float p_life, bool p_immortal):
+		position{p_pos}, origentation{p_orig}, size{p_size}, life{p_life}, immortal{p_immortal} {}
+
+protected:
+	vec3 position;
+	quat origentation;
+	vec3 size;
+
+	float life;
+	bool immortal;
+};
+
+}
+#endif

@@ -4,7 +4,7 @@
 #include <vector>
 using namespace std;
 
-#include <GL/glew.h>
+#include "GLHeader"
 
 #include <debug>
 
@@ -24,6 +24,7 @@ public:
 	virtual void bufferData() const = 0;
 	virtual void bind(GLuint index) const = 0;
 	virtual void unbind(GLuint index) const = 0;
+	virtual const void* getData(size_t& length) const = 0;
 
 protected:
 	GLBuffer() {
@@ -34,7 +35,8 @@ protected:
 	GLuint buffer;
 
 private:
-	GLBuffer(GLBuffer &obj) {}
+	GLBuffer(const GLBuffer& obj);
+	GLBuffer& operator=(const GLBuffer& obj);
 };
 
 template <class T>
@@ -59,8 +61,17 @@ public:
 		return buffer_data.size();
 	}
 
+	virtual const void* getData(size_t& length) const {
+		length = buffer_data.size();
+		if (length == 0)
+			return 0;
+		else
+			return &buffer_data[0];
+	};
+
 	virtual void bufferData() const {
-		glNamedBufferData(buffer, buffer_data.size()*sizeof(T), &buffer_data[0], usage);
+		glBindBuffer(GL_ARRAY_BUFFER, buffer);
+		glBufferData(GL_ARRAY_BUFFER, buffer_data.size()*sizeof(T), &buffer_data[0], usage);
 	}
 
 	virtual void unbind(GLuint index) const = 0;
@@ -70,7 +81,7 @@ public:
 protected:
 	GLBufferObj(GLenum p_usage): buffer_data{*(new vector<T>)}, self_data{true}, usage{p_usage} {}
 
-	GLBufferObj(const vector<T>& p_buffer_data, GLenum p_usage): buffer_data{p_buffer_data}, self_data{false}, usage{p_usage} {}
+	GLBufferObj(vector<T>& p_buffer_data, GLenum p_usage): buffer_data{p_buffer_data}, self_data{false}, usage{p_usage} {}
 
 	GLBufferObj(void *data, size_t size, GLenum p_usage): buffer_data{*(new vector<T>)}, self_data{true}, usage{p_usage} {
 		setData(data, size);
@@ -82,7 +93,8 @@ protected:
 	GLenum usage;
 
 private:
-	GLBufferObj(GLBufferObj& obj) {}
+	GLBufferObj(const GLBufferObj& obj);
+	GLBufferObj& operator=(const GLBufferObj& obj);
 };
 
 template <class T>
@@ -102,7 +114,7 @@ public:
 		return shared_ptr<GLBuffer>(new GLArrayBufferObj(p_vertex_size, p_type, p_normalized, p_stride, p_pointer, p_usage, p_divisor));
 	}
 
-	static shared_ptr<GLBuffer> getGLBuffer(const vector<T>& p_buffer_data, GLint p_vertex_size, GLenum p_usage = GL_STATIC_DRAW,
+	static shared_ptr<GLBuffer> getGLBuffer(vector<T>& p_buffer_data, GLint p_vertex_size, GLenum p_usage = GL_STATIC_DRAW,
 	                                        GLuint p_divisor = 0, GLenum p_type = GL_FLOAT, GLboolean p_normalized = GL_FALSE,
 	                                        GLsizei p_stride = 0, const GLvoid* p_pointer = 0)
 	{
@@ -134,7 +146,7 @@ protected:
 	stride{p_stride}, pointer{p_pointer}, divisor{p_divisor} {}
 
 	GLArrayBufferObj(GLint p_vertex_size, GLenum p_type, GLboolean p_normalized, GLsizei p_stride, const GLvoid* p_pointer,
-	                 const vector<T>& p_buffer_data, GLenum p_usage, GLuint p_divisor): GLBufferObj<T>{p_buffer_data, p_usage},
+	                 vector<T>& p_buffer_data, GLenum p_usage, GLuint p_divisor): GLBufferObj<T>{p_buffer_data, p_usage},
 	vertex_size{p_vertex_size}, type{p_type}, normalized{p_normalized}, stride{p_stride}, pointer{p_pointer}, divisor{p_divisor} {}
 
 	GLArrayBufferObj(GLint p_vertex_size, GLenum p_type, GLboolean p_normalized, GLsizei p_stride, const GLvoid* p_pointer, void *data,
@@ -151,7 +163,8 @@ protected:
 	GLuint divisor;
 
 private:
-	GLArrayBufferObj(GLArrayBufferObj& obj) {}
+	GLArrayBufferObj(const GLArrayBufferObj& obj);
+	GLArrayBufferObj& operator=(const GLArrayBufferObj& obj);
 };
 
 template <class T>
@@ -173,7 +186,7 @@ public:
 		                            p_stride, p_pointer, p_usage, p_divisor));
 	}
 
-	static shared_ptr<GLBuffer> getGLBuffer(const vector<T>& p_buffer_data, GLint p_vertex_size, GLenum p_usage = GL_STREAM_DRAW,
+	static shared_ptr<GLBuffer> getGLBuffer(vector<T>& p_buffer_data, GLint p_vertex_size, GLenum p_usage = GL_STREAM_DRAW,
 	                                        GLuint p_divisor = 1, size_t p_max_size = 100000, const GLintptr& p_offset = 0,
 	                                        const size_t& p_start = 0, GLenum p_type = GL_FLOAT, GLboolean p_normalized = GL_FALSE,
 	                                        GLsizei p_stride = 0, const GLvoid* p_pointer = 0)
@@ -185,8 +198,9 @@ public:
 	virtual ~GLStreamBufferObj() {}
 
 	virtual void bufferData() const {
-		glNamedBufferData(this->buffer, MAX_SIZE * sizeof(T)*this->vertex_size, NULL, this->usage);
-		glNamedBufferSubData(this->buffer, offset, this->buffer_data.size()*sizeof(T), &(this->buffer_data[start]));
+		glBindBuffer(GL_ARRAY_BUFFER, this->buffer);
+		glBufferData(GL_ARRAY_BUFFER, MAX_SIZE * sizeof(T)*this->vertex_size, NULL, this->usage);
+		glBufferSubData(GL_ARRAY_BUFFER, offset, this->buffer_data.size()*sizeof(T), &(this->buffer_data[start]));
 	}
 
 protected:
@@ -196,7 +210,7 @@ protected:
 	MAX_SIZE{p_max_size}, offset{p_offset}, start{p_start} {}
 
 	GLStreamBufferObj(size_t p_max_size, const GLintptr& p_offset, const size_t& p_start, GLint p_vertex_size, GLenum p_type,
-	                  GLboolean p_normalized, GLsizei p_stride, const GLvoid* p_pointer, const vector<T>& p_buffer_data, GLenum p_usage,
+	                  GLboolean p_normalized, GLsizei p_stride, const GLvoid* p_pointer, vector<T>& p_buffer_data, GLenum p_usage,
 	                  GLuint p_divisor): GLArrayBufferObj<T> {
 		p_vertex_size, p_type, p_normalized, p_stride,
 		               p_pointer, p_buffer_data, p_usage, p_divisor
@@ -216,7 +230,8 @@ protected:
 	const size_t& start;
 
 private:
-	GLStreamBufferObj(GLStreamBufferObj& obj) {}
+	GLStreamBufferObj(const GLStreamBufferObj& obj);
+	GLStreamBufferObj& operator=(const GLStreamBufferObj& obj);
 };
 
 template<class T>
@@ -232,7 +247,7 @@ public:
 		return shared_ptr<GLBuffer>(new GLElementBufferObj(p_usage));
 	}
 
-	static shared_ptr<GLBuffer> getGLBuffer(const vector<T>& p_buffer_data, GLenum p_usage = GL_STATIC_DRAW)
+	static shared_ptr<GLBuffer> getGLBuffer(vector<T>& p_buffer_data, GLenum p_usage = GL_STATIC_DRAW)
 	{
 		return shared_ptr<GLBuffer>(new GLElementBufferObj(p_buffer_data, p_usage));
 	}
@@ -249,12 +264,13 @@ public:
 protected:
 	GLElementBufferObj(GLenum p_usage): GLBufferObj<T> {p_usage} {}
 
-	GLElementBufferObj(const vector<T>& p_buffer_data, GLenum p_usage): GLBufferObj<T> {p_buffer_data, p_usage} {}
+	GLElementBufferObj(vector<T>& p_buffer_data, GLenum p_usage): GLBufferObj<T> {p_buffer_data, p_usage} {}
 
 	GLElementBufferObj(void *data, size_t size, GLenum p_usage): GLBufferObj<T> {data, size, p_usage} {}
 
 private:
-	GLElementBufferObj(GLElementBufferObj& obj) {}
+	GLElementBufferObj(const GLElementBufferObj& obj);
+	GLElementBufferObj& operator=(const GLElementBufferObj& obj);
 };
 
 typedef GLArrayBufferObj<GLfloat> GLDataObj;

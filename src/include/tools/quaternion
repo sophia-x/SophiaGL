@@ -1,0 +1,21 @@
+#ifndef QUATERNION_H
+#define QUATERNION_H
+
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+using namespace glm;
+
+namespace Quat
+{
+
+extern const vec3 X;
+extern const vec3 Y;
+extern const vec3 Z;
+
+quat rotationBetweenVectors(const vec3& start, const vec3& dest);
+quat lookAt(const vec3& direction, const vec3& up);
+quat rotateTowards(const quat& q1, const quat& q2, float max_angle);
+
+}
+
+#endif

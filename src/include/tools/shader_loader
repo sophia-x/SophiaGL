@@ -4,11 +4,11 @@
 #include <string>
 using namespace std;
 
-#include <GL/glew.h>
+#include <gl_objs/GLHeader>
 
 #include <debug>
 
-namespace gl
+namespace ShaderLoader
 {
 
 GLuint load_shader(const string& vertex_path, const string& fragment_path);

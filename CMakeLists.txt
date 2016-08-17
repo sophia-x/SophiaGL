@@ -19,7 +19,7 @@ find_library(COREVIDEO CoreVideo)
 find_library(GLEW glew)
 find_library(OPENGL OpenGL)
 find_library(ASSIMP assimp)
-find_library(SOIL SOIL)
+find_library(ANTTWEAKBAR anttweakbar)
 
 SET(EXTRA_LIBS 	
 	${GLFW}
@@ -29,7 +29,7 @@ SET(EXTRA_LIBS
 	${GLEW}
 	${OPENGL}
 	${ASSIMP}
-	${SOIL}
+	${ANTTWEAKBAR}
 )
 
 # compile

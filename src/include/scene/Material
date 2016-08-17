@@ -1,0 +1,56 @@
+#ifndef MATERIAL_H
+#define MATERIAL_H
+
+#include <unordered_map>
+#include <vector>
+#include <string>
+using namespace std;
+
+#include <glm/glm.hpp>
+using namespace glm;
+
+#include <gl_objs/GLHeader>
+
+namespace gl
+{
+
+class Material {
+public:
+	virtual ~Material() {}
+	virtual void setUniforms(const vector<GLuint>& ids) const = 0;
+};
+
+class PhoneMaterial: public Material {
+public:
+	static void addMaterial(const string& key, const vec3& p_ambient_color_ratio, const vec3& p_specular_color, float p_specular_ratio) {
+		materials[key] = PhoneMaterial(p_ambient_color_ratio, p_specular_color, p_specular_ratio);
+	}
+
+	static const PhoneMaterial& getMaterial(const string& key) {
+		return materials.at(key);
+	}
+
+	PhoneMaterial() {}
+
+	virtual void setUniforms(const vector<GLuint>& ids) const {
+		glUniform3f(ids[0], ambient_color_ratio.x, ambient_color_ratio.y, ambient_color_ratio.z);
+		glUniform3f(ids[1], specular_color.x, specular_color.y, specular_color.z);
+		glUniform1f(ids[2], specular_ratio);
+	}
+
+protected:
+	vec3 ambient_color_ratio;
+	vec3 specular_color;
+	float specular_ratio;
+
+private:
+	PhoneMaterial(const vec3& p_ambient_color_ratio, const vec3& p_specular_color, float p_specular_ratio):
+		ambient_color_ratio{p_ambient_color_ratio}, specular_color{p_specular_color}, specular_ratio{p_specular_ratio} {}
+
+private:
+	static unordered_map<string, PhoneMaterial> materials;
+};
+
+}
+
+#endif

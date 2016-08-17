@@ -1,0 +1,19 @@
+#ifndef CALL_BACK_HELPER_H
+#define CALL_BACK_HELPER_H
+
+#include <gl_objs/GLHeader>
+
+namespace CallBackHelper {
+
+void scrollCallBack(GLFWwindow * window, double x, double y);
+void regist(unsigned long key);
+double getScrollX();
+double getScrollY();
+const GLFWwindow* getWindow();
+bool scrolled(unsigned long key);
+
+void debugOutputCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
+
+}
+
+#endif

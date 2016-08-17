@@ -1,6 +1,10 @@
 #ifndef GL_SHADER_H
 #define GL_SHADER_H
 
+#include <vector>
+#include <unordered_map>
+using namespace std;
+
 #include <tools/shader_loader>
 
 #include <debug>
@@ -26,20 +30,25 @@ public:
 		return uniforms.at(key);
 	}
 
+	void unuseShader() const {
+		glUseProgram(0);
+	}
+
 private:
 	GLuint program_ID;
 	unordered_map<string, GLuint> uniforms;
 
 private:
 	GLShader(const string &vertex_path, const string &fragment_path, const vector<string>& names) {
-		program_ID = load_shader(vertex_path, fragment_path);
+		program_ID = ShaderLoader::load_shader(vertex_path, fragment_path);
 
 		for (const string &name : names) {
 			uniforms[name] = glGetUniformLocation(program_ID, name.c_str());
 		}
 	}
 
-	GLShader(GLShader& obj) {}
+	GLShader(const GLShader& obj);
+	GLShader& operator=(const GLShader& obj);
 };
 
 }

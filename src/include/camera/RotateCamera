@@ -1,0 +1,85 @@
+#ifndef ROTATE_CAMERA_H
+#define ROTATE_CAMERA_H
+
+#include <tools/callback_helper>
+
+#include <debug>
+
+#include "Camera"
+
+namespace  gl
+{
+
+class RotateCamera: public Camera {
+public:
+	static shared_ptr<Camera> getCamera(vec3 p_pos, float p_rotate_speed, float p_move_speed, float p_fov_speed, vec3 p_up = Quat::Y,
+	                                    vec3 p_origin = vec3(0), float p_fov = 45.0f, float p_ratio = 4.0f / 3.0f,
+	                                    float p_near = 0.1f, float p_far = 100.f)
+	{
+		return shared_ptr<Camera>(new RotateCamera(p_pos, p_origin, p_up, p_rotate_speed, p_move_speed, p_fov_speed, p_fov,
+		                          p_ratio, p_near, p_far));
+	}
+
+	virtual void init() {
+		window = glfwGetCurrentContext();
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwSetScrollCallback(window, CallBackHelper::scrollCallBack);
+		CallBackHelper::regist((unsigned long)this);
+	}
+
+protected:
+	RotateCamera(const vec3& p_pos, const vec3& p_origin, const vec3& p_up, float p_rotate_speed, float p_move_speed, float p_fov_speed,
+	             float p_fov, float p_ratio, float p_near, float p_far): Camera{p_pos, Quat::lookAt(p_origin - p_pos, p_up), 0, true,
+		                     p_fov, p_ratio, p_near, p_far}, rotate_speed{p_rotate_speed}, move_speed{p_move_speed}, fov_speed{p_fov_speed},
+		origin{p_origin}, p_xpos{0}, p_ypos{0} {}
+
+	virtual void control(float delta) {
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+
+		float x_angle = 0, y_angle = 0;
+		if (glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS) {
+			x_angle += delta * rotate_speed;
+		}
+		if (glfwGetKey( window, GLFW_KEY_DOWN ) == GLFW_PRESS) {
+			x_angle -= delta * rotate_speed;
+		}
+		if (glfwGetKey( window, GLFW_KEY_RIGHT ) == GLFW_PRESS) {
+			y_angle += delta * rotate_speed;
+		}
+		if (glfwGetKey( window, GLFW_KEY_LEFT ) == GLFW_PRESS) {
+			y_angle -= delta * rotate_speed;
+		}
+
+		quat x_quat = rotate(quat(), x_angle, origentation * Quat::X);
+		quat xy_quat = rotate(x_quat, y_angle, x_quat * origentation * Quat::Y);
+
+		origentation = xy_quat * origentation;
+		position = xy_quat * (position - origin) + origin;
+		if (abs(xpos - p_xpos) <= abs(ypos - p_ypos))
+			position += move_speed * float(ypos - p_ypos) * (origentation * Quat::Z);
+		else
+			position += move_speed * float(xpos - p_xpos) * (origentation * Quat::X);
+		p_xpos = xpos; p_ypos = ypos;
+
+		view_matrix = lookAt(position, position + origentation * Quat::Z, origentation * Quat::Y);
+
+		if (CallBackHelper::scrolled((unsigned long)this) && CallBackHelper::getWindow() == window) {
+			fov -= fov_speed * CallBackHelper::getScrollY();
+			CallBackHelper::regist((unsigned long)this);
+		}
+
+		projection_matrix = glm::perspective(glm::radians(fov), ratio, near, far);
+	}
+
+protected:
+	GLFWwindow *window;
+
+	float rotate_speed, move_speed, fov_speed;
+	double p_xpos, p_ypos;
+
+	vec3 origin;
+};
+
+}
+#endif
