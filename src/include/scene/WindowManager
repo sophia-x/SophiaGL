@@ -32,6 +32,7 @@ public:
 
 	void addWindow(const string &key, GLFWwindow* window) {
 		windows[key] = window;
+		scenes[key];
 	}
 
 	void setCurrent(const string &key) {

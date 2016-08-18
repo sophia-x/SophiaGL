@@ -9,5 +9,9 @@
 void standard_demo();
 void rotation_demo();
 void normal_mapping_demo();
+void pick_by_bullet_demo();
+void pick_by_udf_demo();
+void pick_by_color_demo();
+void billboard_demo();
 
 #endif

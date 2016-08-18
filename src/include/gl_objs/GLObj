@@ -68,17 +68,17 @@ public:
 		return buffers.at(key)->getData(length);
 	};
 
-	void draw(const vector<string>& keys, const vector<GLuint>& targets, const string& draw_key, GLuint first = 0, GLsizei dis2end = 0) {
+	void draw(const vector<string>& keys, const string& draw_key, GLuint first = 0, GLsizei dis2end = 0) {
 		glBindVertexArray(vertex_array_ID);
 
 		for (size_t i = 0; i < keys.size(); i++) {
-			(*buffers.at(keys[i])).bind(targets[i]);
+			(*buffers.at(keys[i])).bind(i);
 		}
 
 		(*draw_objs.at(draw_key)).draw(first, dis2end);
 
 		for (size_t i = 0; i < keys.size(); i++) {
-			(*buffers.at(keys[i])).unbind(targets[i]);
+			(*buffers.at(keys[i])).unbind(i);
 		}
 
 		glBindVertexArray(0);

@@ -20,7 +20,8 @@ shared_ptr<TextToolModel> TextToolModel::getTool(const vec4& p_border, const vec
 		obj_ptr->addDrawObj("Array", GLArrayDraw::getDrawObj(obj_ptr->getBuffer("Vertices"), GL_TRIANGLES));
 	}
 
-	return shared_ptr<TextToolModel>(new TextToolModel(obj_ptr, GLShader::getShader(vertex_path, fragment_path, uniforms), p_border, p_size));
+	return shared_ptr<TextToolModel>(new TextToolModel(obj_ptr, GLShader::getShader(vertex_path, fragment_path, uniforms), p_border, p_size,
+	                                 vector<string> {"Vertices", "Uvs"}, "Array"));
 }
 
 void TextToolModel::print_text(const string& text, int x, int y, int size) {
@@ -85,7 +86,7 @@ void TextToolModel::draw() {
 			glBindTexture(GL_TEXTURE_2D, gl_obj->getTexture("TEXT"));
 			glUniform1i(shader_ptr->getUniform("texture_in"), 0);
 
-			gl_obj->draw(vector<string> {"Vertices", "Uvs"}, vector<GLuint> {0, 1}, "Array");
+			gl_obj->draw(draw_vec, draw_obj);
 		}
 		glDisable(GL_BLEND);
 	}

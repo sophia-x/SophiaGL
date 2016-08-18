@@ -33,8 +33,20 @@ public:
 		return model_matrix;
 	}
 
-	virtual const vec3& getPos() {
+	virtual const vec3& getPos() const {
 		return position;
+	}
+
+	virtual const quat& getOrig() const {
+		return origentation;
+	}
+
+	virtual const vec3& getSize() const {
+		return size;
+	}
+
+	virtual const float& getLife() const {
+		return life;
 	}
 
 	virtual void update(float delta) {
@@ -52,6 +64,10 @@ public:
 
 	virtual void setOrig(const quat& p_orig) {
 		origentation = p_orig;
+	}
+
+	virtual void setLife(float p_life) {
+		life = p_life;
 	}
 
 protected:

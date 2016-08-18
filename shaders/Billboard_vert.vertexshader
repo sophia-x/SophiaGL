@@ -1,0 +1,26 @@
+#version 330 core
+
+layout(location = 0) in vec3 vertices;
+layout(location = 1) in vec2 uvs;
+
+out vec2 UV;
+
+uniform vec3 camera_right_worldspace;
+uniform vec3 camera_up_worldspace;
+uniform mat4 VP; // Model-View-Projection matrix, but without the Model (the position is in billboard_pos; the orientation depends on the camera)
+uniform vec3 billboard_pos; // Position of the center of the billboard
+uniform vec2 billboard_size; // Size of the billboard, in world units (probably meters)
+
+void main(){
+	vec3 particle_center_wordspace = billboard_pos;
+	vec3 billboard_right = normalize(cross(cross(camera_up_worldspace, camera_right_worldspace), vec3(0,1,0)));
+	vec3 vertex_position_worldspace = 
+		particle_center_wordspace
+		+ billboard_right * vertices.x * billboard_size.x
+		+ vec3(0,1,0) * vertices.y * billboard_size.y;
+	// Output position of the vertex
+	gl_Position = VP * vec4(vertex_position_worldspace, 1.0f);
+
+	// UV of the vertex. No special space for this one.
+	UV = uvs;
+}

@@ -36,7 +36,11 @@ int main() {
 
 	// standard_demo();
 	// rotation_demo();
-	normal_mapping_demo();
+	// normal_mapping_demo();
+	// pick_by_bullet_demo();
+	// pick_by_udf_demo();
+	// pick_by_color_demo();
+	billboard_demo();
 
 	return 0;
 }

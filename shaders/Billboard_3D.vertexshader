@@ -1,0 +1,25 @@
+#version 330 core
+
+layout(location = 0) in vec3 vertices;
+layout(location = 1) in vec2 uvs;
+
+out vec2 UV;
+
+uniform vec3 camera_right_worldspace;
+uniform vec3 camera_up_worldspace;
+uniform mat4 VP;
+uniform vec3 billboard_pos; // Position of the center of the billboard
+uniform vec2 billboard_size; // Size of the billboard, in world units (probably meters)
+
+void main(){
+	// 3D
+	vec3 particle_center_wordspace = billboard_pos;
+	vec3 vertex_position_worldspace = 
+		particle_center_wordspace
+		+ camera_right_worldspace * vertices.x * billboard_size.x
+		+ camera_up_worldspace * vertices.y * billboard_size.y;
+	// Output position of the vertex
+	gl_Position = VP * vec4(vertex_position_worldspace, 1.0f);
+
+	UV = uvs;
+}

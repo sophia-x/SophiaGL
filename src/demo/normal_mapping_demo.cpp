@@ -72,14 +72,14 @@ void normal_mapping_demo() {
 	manager.addScene(WINDOW_NAME, scene_ptr);
 
 	// Create DebugModel
-	shared_ptr<PassthroughMvpToolModel> normal_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), vec3(1, 0, 0), GL_LINES);
-	normal_ptr->addSpirit(BaseModelSpirit::getModelSpirit(spirit));
+	shared_ptr<PassthroughMvpToolModel> normal_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES);
+	normal_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec3(1, 0, 0)));
 
-	shared_ptr<PassthroughMvpToolModel> tangent_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), vec3(0, 1, 0), GL_LINES);
-	tangent_ptr->addSpirit(BaseModelSpirit::getModelSpirit(spirit));
+	shared_ptr<PassthroughMvpToolModel> tangent_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES);
+	tangent_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec3(0, 1, 0)));
 
-	shared_ptr<PassthroughMvpToolModel> bitagent_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), vec3(0, 0, 1), GL_LINES);
-	bitagent_ptr->addSpirit(BaseModelSpirit::getModelSpirit(spirit));
+	shared_ptr<PassthroughMvpToolModel> bitagent_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES);
+	bitagent_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec3(0, 0, 1)));
 
 	size_t vertices_size, normals_size, tangents_size, bitangents_size;
 	GLfloat* vertices = (GLfloat*)model_ptr->getData("Vertices", vertices_size);

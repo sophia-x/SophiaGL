@@ -1,0 +1,19 @@
+#version 330 core
+
+// Interpolated values from the vertex shaders
+in vec2 UV;
+
+// Ouput data
+out vec4 color;
+
+uniform sampler2D texture_in;
+uniform vec4 border;
+uniform vec4 life_color;
+
+void main(){
+	color = texture( texture_in, UV );
+	
+	// Hardcoded life level, should be in a separate texture.
+	if (UV.x > border.x && UV.y > border.y && UV.x < border.z && UV.y < border.w)
+		color = life_color;
+}

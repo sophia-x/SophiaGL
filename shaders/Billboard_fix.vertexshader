@@ -1,0 +1,20 @@
+#version 330 core
+
+layout(location = 0) in vec3 vertices;
+layout(location = 1) in vec2 uvs;
+
+out vec2 UV;
+
+uniform mat4 VP;
+uniform vec3 billboard_pos;
+uniform vec2 billboard_size;
+
+void main(){
+	// Fixed 3D
+	vec3 vertex_position_worldspace = billboard_pos;
+	gl_Position = VP * vec4(vertex_position_worldspace, 1.0f); // Get the screen-space position of the particle's center
+	gl_Position /= gl_Position.w; // Here we have to do the perspective division ourselves.
+	gl_Position.xy += vertices.xy * billboard_size; // Move the vertex in directly screen space. No need for CameraUp/Right_worlspace here.
+	
+	UV = uvs;
+}

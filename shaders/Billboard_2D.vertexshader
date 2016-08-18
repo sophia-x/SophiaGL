@@ -1,0 +1,21 @@
+#version 330 core
+
+layout(location = 0) in vec3 vertices;
+layout(location = 1) in vec2 uvs;
+
+// Output data ; will be interpolated for each fragment.
+out vec2 UV;
+
+uniform mat4 VP;
+uniform vec3 billboard_pos;
+uniform vec2 billboard_size;
+
+void main(){
+	// 2D 	
+	vec4 pos_worldspace = vec4(billboard_pos, 1.0f);
+	vec4 pos_screenspace = VP * pos_worldspace;
+	pos_screenspace /= pos_screenspace.w;
+	gl_Position = pos_screenspace + vec4(vertices.xy * billboard_size, 0.0, 0.0);
+	
+	UV = uvs;
+}

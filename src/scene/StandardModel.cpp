@@ -29,7 +29,7 @@ shared_ptr<StandardModel> StandardModel::getModel(const string& obj_path, const 
 		obj_ptr->addDrawObj("Element", GLElementDraw::getDrawObj(obj_ptr->getBuffer("Indices"), GL_TRIANGLES));
 	}
 
-	return shared_ptr<StandardModel>(new StandardModel(obj_ptr));
+	return shared_ptr<StandardModel>(new StandardModel(obj_ptr, vector<string> {"Vertices", "Uvs", "Normals", "Indices"}, "Element"));
 }
 
 void StandardModel::draw(const shared_ptr<GLShader>& shader_ptr) const {
@@ -57,7 +57,7 @@ void StandardModel::draw(const shared_ptr<GLShader>& shader_ptr) const {
 		glUniformMatrix4fv(shader_ptr->getUniform("M"), 1, GL_FALSE, &model_matrix[0][0]);
 		glUniformMatrix4fv(shader_ptr->getUniform("V"), 1, GL_FALSE, &view_matrix[0][0]);
 
-		gl_obj->draw(vector<string> {"Vertices", "Uvs", "Normals", "Indices"}, vector<GLuint> {0, 1, 2, 3}, "Element");
+		gl_obj->draw(draw_vec, draw_obj);
 	}
 }
 

@@ -18,6 +18,10 @@ public:
 		return *spirit_ptr;
 	}
 
+	virtual const shared_ptr<Spirit>& getSpiritPtr() {
+		return spirit_ptr;
+	}
+
 protected:
 	BaseModelSpirit(const shared_ptr<Spirit>& p_spirit): spirit_ptr{p_spirit} {}
 
@@ -74,6 +78,29 @@ protected:
 
 protected:
 	GLuint normal_id, specular_id;
+};
+
+class PassthroughMvpModelSpirit: public BaseModelSpirit {
+public:
+	static shared_ptr<PassthroughMvpModelSpirit> getModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, const vec3& p_color)
+	{
+		return shared_ptr<PassthroughMvpModelSpirit>(new PassthroughMvpModelSpirit(p_spirit_ptr, p_color));
+	}
+
+	const vec3& getColor() const {
+		return color;
+	}
+
+	void setColor(const vec3& p_color) {
+		color = p_color;
+	}
+
+protected:
+	PassthroughMvpModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, const vec3& p_color):
+		BaseModelSpirit{p_spirit_ptr}, color{p_color} {}
+
+protected:
+	vec3 color;
 };
 
 }

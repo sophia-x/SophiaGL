@@ -35,7 +35,8 @@ shared_ptr<NormalMappingModel> NormalMappingModel::getModel(const string& obj_pa
 		obj_ptr->addDrawObj("Element", GLElementDraw::getDrawObj(obj_ptr->getBuffer("Indices"), GL_TRIANGLES));
 	}
 
-	return shared_ptr<NormalMappingModel>(new NormalMappingModel(obj_ptr));
+	return shared_ptr<NormalMappingModel>(new NormalMappingModel(obj_ptr, vector<string>
+	{"Vertices", "Uvs", "Normals", "Tangents", "Bitangents", "Indices"}, "Element"));
 }
 
 void NormalMappingModel::draw(const shared_ptr<GLShader>& shader_ptr) const {
@@ -73,8 +74,7 @@ void NormalMappingModel::draw(const shared_ptr<GLShader>& shader_ptr) const {
 		mat3 ModelView3x3Matrix = mat3(view_matrix * model_matrix);
 		glUniformMatrix3fv(shader_ptr->getUniform("MV3x3"), 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
 
-		gl_obj->draw(vector<string> {"Vertices", "Uvs", "Normals", "Tangents", "Bitangents", "Indices"}, vector<GLuint> {0, 1, 2, 3, 4, 5},
-		             "Element");
+		gl_obj->draw(draw_vec, draw_obj);
 	}
 }
 
