@@ -27,8 +27,8 @@ public:
 		materials[key] = PhoneMaterial(p_ambient_color_ratio, p_specular_color, p_specular_ratio);
 	}
 
-	static const PhoneMaterial& getMaterial(const string& key) {
-		return materials.at(key);
+	static const PhoneMaterial* getMaterial(const string& key) {
+		return &materials.at(key);
 	}
 
 	PhoneMaterial() {}

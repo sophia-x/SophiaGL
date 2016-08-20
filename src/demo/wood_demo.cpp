@@ -9,10 +9,10 @@ using namespace gl;
 
 #include <demo>
 
-#define TITLE "Shadow map model demo"
+#define TITLE "Wood model demo"
 #define RGB "RGB"
 
-void shadow_map_demo() {
+void wood_demo() {
 	// Get Window Manager
 	WindowManager &manager = WindowManager::getWindowManager();
 
@@ -28,26 +28,10 @@ void shadow_map_demo() {
 	Helper::opengl_init(BG_COLOR);
 
 	// Create Standard Scene
-	shared_ptr<ShadowMapScene> scene_ptr = ShadowMapScene::getScene(vec4(0, 0, WIDTH, HEIGHT), DirectionLight(vec3(0.5, 2, 2), vec3(1), 1.0f));
+	shared_ptr<RenderTextureScene> scene_ptr = RenderTextureScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(0.5, 2, 2), vec3(1), 50.0f));
 	// Create Standard Model
-	shared_ptr<StandardModel> model_ptr = StandardModel::initModel("models/room_thickwalls.obj", vector<pair<string, string>> {
-		make_pair(RGB, "textures/room_thickwalls.DDS")
-	},
-	"shaders/ShadowMapping.vertexshader", "shaders/ShadowMapping.fragmentshader",
-	vector<string> {
-		"MVP",
-		"V",
-		"M",
-		"depth_bias_MVP",
-		"diffuse_texture",
-		"light_direction_worldspace",
-		"light_color",
-		"light_power",
-		"material_ambient_color_ratio",
-		"material_specular_color",
-		"material_specular_ratio",
-		"bias_ratio",
-		"shadowMap"
+	shared_ptr<StandardModel> model_ptr = StandardModel::initModel("models/monkey.obj", vector<pair<string, string>> {
+		make_pair(RGB, "textures/monkey.DDS")
 	});
 	// Create Material
 	PhoneMaterial::addMaterial(RGB, vec3(0.1f), vec3(0.3f), 5);
@@ -57,7 +41,13 @@ void shadow_map_demo() {
 	// Add Scene
 	manager.addScene(WINDOW_NAME, scene_ptr);
 
-	shared_ptr<VertexTextureToolModel> cube_ptr = VertexTextureToolModel::initTool(vec4(0, 0, 256, 256), GL_TRIANGLES, scene_ptr->getTexture(0));
+	shared_ptr<VertexTextureToolModel> cube_ptr = VertexTextureToolModel::initTool(vec4(0, 0, WIDTH, HEIGHT), GL_TRIANGLES, scene_ptr->getTexture(0),
+	"shaders/Passthrough.vertexshader", "shaders/WobblyTexture.fragmentshader", vector<string> {
+		"time",
+		"texture_in",
+		"M"
+	});
+	cube_ptr->setSetter(TimeSetter::getSetter(Setter::getSetter(), cube_ptr->getShaderPtr()->getUniform("time")));
 	vector<GLfloat> data = {
 		-1.0f, -1.0f, 0.0f,
 		1.0f, -1.0f, 0.0f,

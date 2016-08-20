@@ -26,6 +26,22 @@ static void setTwUI() {
 	TwAddVarRW(GUI, "Last picked object", TW_TYPE_STDSTRING, &message, NULL);
 }
 
+vector<shared_ptr<PassthroughMvpToolModel>> models;
+
+class ColorListener: public AddModelListener {
+public:
+	void modelAdded(const shared_ptr<Model>& model, size_t i) {
+		int r = (i & 0x000000FF) >>  0;
+		int g = (i & 0x0000FF00) >>  8;
+		int b = (i & 0x00FF0000) >> 16;
+
+		shared_ptr<PassthroughMvpToolModel> debug_ptr = PassthroughMvpToolModel::initTool(vec4(0, 0, WIDTH, HEIGHT), GL_TRIANGLES,
+		        vec4(r / 255.0f, g / 255.0f, b / 255.0f, 1), true);
+		debug_ptr->setGLObj(model->getGLObjPtr());
+		models.push_back(debug_ptr->getInstance(model->spirit_ptr()));
+	}
+};
+
 void pick_by_color_demo() {
 	// Get Window Manager
 	WindowManager &manager = WindowManager::getWindowManager();
@@ -45,35 +61,24 @@ void pick_by_color_demo() {
 
 	// Create Standard Scene
 	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(4), vec3(1), 50.0f));
+	scene_ptr->addListener(new ColorListener());
 	// Create Standard Model
-	shared_ptr<StandardModel> model_ptr = StandardModel::getModel("models/monkey.obj", vector<pair<string, string>> {
+	shared_ptr<StandardModel> model_ptr = StandardModel::initModel("models/monkey.obj", vector<pair<string, string>> {
 		make_pair(RGB, "textures/monkey.DDS")
 	});
+
 	// Create Material
 	PhoneMaterial::addMaterial(RGB, vec3(0.1f), vec3(0.3f), 5);
 	// Add ModelSpirit
 	for (int i = 0; i < 100; i++) {
 		vec3 pos = vec3(rand() % 20 - 10, rand() % 20 - 10, rand() % 20 - 10);
 		quat orientation = quat(vec3(rand() % 360, rand() % 360, rand() % 360));
-		model_ptr->addSpirit(StandardModelSpirit::getModelSpirit(Spirit::getImmortalSpirit(pos, orientation), model_ptr->getGLObj().getTexture(RGB),
-		                     PhoneMaterial::getMaterial(RGB)));
+		scene_ptr->addModel(model_ptr->getInstance(Spirit::getImmortalSpirit(pos, orientation), model_ptr->getGLObj().getTexture(RGB),
+		                    PhoneMaterial::getMaterial(RGB)));
 	}
 
-	// Add Model
-	scene_ptr->addModel(RGB, model_ptr);
 	// Add Scene
 	manager.addScene(WINDOW_NAME, scene_ptr);
-
-	shared_ptr<PassthroughMvpToolModel> debug_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_TRIANGLES, true);
-	debug_ptr->setGLObj(model_ptr->getGLObjPtr());
-	const vector<shared_ptr<BaseModelSpirit>>& spirits = model_ptr->getSpirits();
-	for (size_t i = 0; i < spirits.size(); i++) {
-		int r = (i & 0x000000FF) >>  0;
-		int g = (i & 0x0000FF00) >>  8;
-		int b = (i & 0x00FF0000) >> 16;
-
-		debug_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirits[i]->getSpiritPtr(), vec4(r / 255.0f, g / 255.0f, b / 255.0f, 1)));
-	}
 
 	Timer timer;
 	while (manager.next()) {
@@ -86,7 +91,8 @@ void pick_by_color_demo() {
 			glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			debug_ptr->draw();
+			for (const shared_ptr<PassthroughMvpToolModel>& debug_ptr : models)
+				debug_ptr->draw();
 
 			glFlush();
 			glFinish();
@@ -110,7 +116,7 @@ void pick_by_color_demo() {
 			glClearColor(color[0], color[1], color[2], color[3]);
 		}
 
-		manager.step(delta);
+		manager.step(delta, vector<string>{WINDOW_NAME});
 
 		TwDraw();
 	}

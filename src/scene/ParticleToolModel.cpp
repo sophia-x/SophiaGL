@@ -6,18 +6,18 @@
 namespace gl
 {
 
-static bool life_compare_heap(const shared_ptr<BaseModelSpirit>& a, const shared_ptr<BaseModelSpirit>& b) {
-	return a->spirit().getLife() > b->spirit().getLife();
+static bool life_compare_heap(const shared_ptr<ParticleSpirit>& a, const shared_ptr<ParticleSpirit>& b) {
+	return a->getLife() > b->getLife();
 }
 
-static bool dist_compare(const shared_ptr<BaseModelSpirit>& a, const shared_ptr<BaseModelSpirit>& b) {
+static bool dist_compare(const shared_ptr<ParticleSpirit>& a, const shared_ptr<ParticleSpirit>& b) {
 	const Camera& camera = *WindowManager::getWindowManager().currentCamera();
 	const vec3& camera_pos = camera.getPosition();
 
-	return distance(camera_pos, a->spirit().getPos()) > distance(camera_pos, b->spirit().getPos());
+	return distance(camera_pos, a->getPos()) > distance(camera_pos, b->getPos());
 }
 
-shared_ptr<ParticleToolModel> ParticleToolModel::getTool(const vec4& p_border, GLenum p_mode,
+shared_ptr<ParticleToolModel> ParticleToolModel::initTool(const vec4& p_border, GLenum p_mode,
         const string& p_texture, const string &vertex_path, const string &fragment_path, const vector<string>& uniforms) {
 	// Create GLObj
 	shared_ptr<GLObj> obj_ptr = GLObj::getGLObj();
@@ -40,34 +40,30 @@ void ParticleToolModel::sortByLife() {
 }
 
 void ParticleToolModel::update(float delta) {
-	Model::update(delta);
-
 	sortByLife();
 
-	while (!spirits.empty() && !spirits[0]->spirit().alive()) {
+	while (!spirits.empty() && !spirits[0]->alive()) {
 		pop_heap(spirits.begin(), spirits.end(), life_compare_heap);
 		spirits.pop_back();
 	}
 
-	vector<shared_ptr<BaseModelSpirit>> vec = spirits;
+	vector<shared_ptr<ParticleSpirit>> vec = spirits;
 
 	sort(vec.begin(), vec.end(), dist_compare);
 
 	vector<GLfloat> positions(4 * spirits.size());
 	vector<GLfloat> colors(4 * spirits.size());
 	for (size_t i = 0; i < vec.size(); i ++) {
-		const shared_ptr<ParticleModelSpirit>& p_ptr = (const shared_ptr<ParticleModelSpirit>&)vec[i];
-
-		const Spirit& sp = p_ptr->spirit();
+		const ParticleSpirit& sp = *vec[i];
 		positions[4 * i + 0] = sp.getPos().x;
 		positions[4 * i + 1] = sp.getPos().y;
 		positions[4 * i + 2] = sp.getPos().z;
 		positions[4 * i + 3] = sp.getSize().x;
 
-		colors[4 * i + 0] = p_ptr->getColor().x;
-		colors[4 * i + 1] = p_ptr->getColor().y;
-		colors[4 * i + 2] = p_ptr->getColor().z;
-		colors[4 * i + 3] = p_ptr->getColor().w;
+		colors[4 * i + 0] = sp.getColor().x;
+		colors[4 * i + 1] = sp.getColor().y;
+		colors[4 * i + 2] = sp.getColor().z;
+		colors[4 * i + 3] = sp.getColor().w;
 	}
 
 	gl_obj->setData("xyzs", &positions[0], positions.size());
@@ -78,10 +74,11 @@ void ParticleToolModel::update(float delta) {
 	draw_ptr->setCount(spirits.size());
 }
 
-void ParticleToolModel::draw() {
+void ParticleToolModel::draw() const {
 	glViewport(border[0], border[1], border[2], border[3]);
 	shader_ptr->useShader();
-	{
+	{	
+		setter->setup();
 		const Camera& camera = *WindowManager::getWindowManager().currentCamera();
 		const mat4 &projection_matrix = camera.getProjectionMatrix();
 		const mat4 &view_matrix = camera.getViewMatrix();
@@ -94,7 +91,6 @@ void ParticleToolModel::draw() {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gl_obj->getTexture("Particle"));
 		glUniform1i(shader_ptr->getUniform("texture_in"), 0);
-
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

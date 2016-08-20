@@ -2,6 +2,7 @@
 #define SPIRIT_H
 
 #include <memory>
+#include <vector>
 using namespace std;
 
 #include <glm/glm.hpp>
@@ -17,11 +18,18 @@ public:
 	static shared_ptr<Spirit> getMortalSpirit(float p_life, const vec3& p_pos = vec3(), const quat& p_orig = quat(),
 	        const vec3& p_size = vec3(1))
 	{
-		return shared_ptr<Spirit>(new Spirit(p_pos, p_orig, p_size, p_life, false));
+		shared_ptr<Spirit> ptr(new Spirit(p_pos, p_orig, p_size, p_life, false));
+		spirits.push_back(ptr);
+		return ptr;
 	}
 
 	static shared_ptr<Spirit> getImmortalSpirit(const vec3& p_pos = vec3(), const quat& p_orig = quat(), const vec3& p_size = vec3(1)) {
 		return shared_ptr<Spirit>(new Spirit(p_pos, p_orig, p_size, 0, true));
+	}
+
+	static void update_all(float delta) {
+		for (shared_ptr<Spirit>& spirit : spirits)
+			spirit->update(delta);
 	}
 
 	virtual mat4 getModelMatrix() const {
@@ -81,14 +89,23 @@ protected:
 
 	float life;
 	bool immortal;
+
+protected:
+	static vector<shared_ptr<Spirit>> spirits;
 };
 
 class ParticleSpirit: public Spirit {
 public:
-	static shared_ptr<ParticleSpirit> getMortalSpirit(float p_life, const vec3& p_pos = vec3(), const vec3& p_speed = vec3(),
-	        const vec3& p_acc = vec3(), const quat& p_orig = quat(), const vec3& p_size = vec3(1))
+	static shared_ptr<ParticleSpirit> getMortalSpirit(float p_life, const vec4& p_color = vec4(), const vec3& p_pos = vec3(),
+	        const vec3& p_speed = vec3(), const vec3& p_acc = vec3(), const quat& p_orig = quat(), const vec3& p_size = vec3(1))
 	{
-		return shared_ptr<ParticleSpirit>(new ParticleSpirit(p_pos, p_orig, p_size, p_life, false, p_speed, p_acc));
+		shared_ptr<ParticleSpirit> ptr(new ParticleSpirit(p_color, p_pos, p_orig, p_size, p_life, false, p_speed, p_acc));
+		Spirit::spirits.push_back(ptr);
+		return ptr;
+	}
+
+	virtual const vec4& getColor() const {
+		return color;
 	}
 
 	virtual void update(float delta) {
@@ -101,11 +118,13 @@ public:
 	}
 
 protected:
-	ParticleSpirit(const vec3& p_pos, const quat& p_orig, const vec3& p_size, float p_life, bool p_immortal,
-	               const vec3& p_speed, const vec3& p_acc): Spirit{p_pos, p_orig, p_size, p_life, p_immortal}, speed{p_speed}, acc{p_acc} {}
+	ParticleSpirit(const vec4& p_color, const vec3& p_pos, const quat& p_orig, const vec3& p_size, float p_life, bool p_immortal,
+	               const vec3& p_speed, const vec3& p_acc): Spirit{p_pos, p_orig, p_size, p_life, p_immortal}, speed{p_speed},
+		acc{p_acc}, color{p_color} {}
 
 protected:
 	vec3 speed, acc;
+	vec4 color;
 };
 
 }

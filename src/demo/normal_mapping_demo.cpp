@@ -31,55 +31,36 @@ void normal_mapping_demo() {
 	Helper::opengl_init(BG_COLOR);
 
 	// Create Standard Scene
-	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(0, 0, 4), vec3(1), 50.0f),
-	                                      "shaders/NormalMapping.vertexshader", "shaders/NormalMapping.fragmentshader",
-	vector<string> {
-		"diffuse_texture",
-		"normal_texture",
-		"specular_texture",
-		"MVP",
-		"V",
-		"M",
-		"MV3x3",
-		"light_position_worldspace",
-		"light_color",
-		"light_power",
-		"material_ambient_color_ratio",
-		"material_specular_color",
-		"material_specular_ratio"
-	});
+	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(0, 0, 4), vec3(1), 50.0f));
 
 	// Create Spirit
 	shared_ptr<Spirit> spirit = Spirit::getImmortalSpirit();
 	// Create Standard Model
 	shared_ptr<NormalMappingModel> model_ptr;
 	{
-		model_ptr = NormalMappingModel::getModel("models/cylinder.obj", vector<pair<string, string>> {
+		model_ptr = NormalMappingModel::initModel("models/cylinder.obj", vector<pair<string, string>> {
 			make_pair("Diffuse", "textures/diffuse.DDS"),
 			make_pair("Normal", "textures/normal.bmp"),
 			make_pair("Specular", "textures/specular.DDS")
 		});
 		// Create Material
 		PhoneMaterial::addMaterial(RGB, vec3(0.1f), vec3(0.3f), 5);
-		// Add ModelSpirit
-		model_ptr->addSpirit(NormalMappingModelSpirit::getModelSpirit(spirit, model_ptr->getGLObj().getTexture("Diffuse"),
-		                     model_ptr->getGLObj().getTexture("Normal"), model_ptr->getGLObj().getTexture("Specular"),
-		                     PhoneMaterial::getMaterial(RGB)));
+
 		// Add Model
-		scene_ptr->addModel(RGB, model_ptr);
+		scene_ptr->addModel(model_ptr->getInstance(spirit, model_ptr->getGLObj().getTexture("Diffuse"),
+		                    model_ptr->getGLObj().getTexture("Normal"), model_ptr->getGLObj().getTexture("Specular"),
+		                    PhoneMaterial::getMaterial(RGB)));
 	}
 	// Add Scene
 	manager.addScene(WINDOW_NAME, scene_ptr);
 
 	// Create DebugModel
-	shared_ptr<PassthroughMvpToolModel> normal_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES);
-	normal_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec4(1, 0, 0, 1)));
-
-	shared_ptr<PassthroughMvpToolModel> tangent_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES);
-	tangent_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec4(0, 1, 0, 1)));
-
-	shared_ptr<PassthroughMvpToolModel> bitagent_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES);
-	bitagent_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec4(0, 0, 1, 1)));
+	shared_ptr<PassthroughMvpToolModel> normal_ptr =
+	    PassthroughMvpToolModel::initTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES, vec4(1, 0, 0, 1))->getInstance(spirit);
+	shared_ptr<PassthroughMvpToolModel> tangent_ptr =
+	    PassthroughMvpToolModel::initTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES, vec4(0, 1, 0, 1))->getInstance(spirit);
+	shared_ptr<PassthroughMvpToolModel> bitagent_ptr =
+	    PassthroughMvpToolModel::initTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES, vec4(0, 0, 1, 1))->getInstance(spirit);
 
 	size_t vertices_size, normals_size, tangents_size, bitangents_size;
 	GLfloat* vertices = (GLfloat*)model_ptr->getData("Vertices", vertices_size);
@@ -91,7 +72,7 @@ void normal_mapping_demo() {
 	tangent_vertex.reserve((vertices_size / 3 * 2));
 	bitangent_vertex.reserve((vertices_size / 3 * 2));
 	for (size_t i = 0; i < vertices_size; i += 3) {
-		vec3 vertice(vertices[i], vertices[i + 1], vertices[i + 2]);
+	vec3 vertice(vertices[i], vertices[i + 1], vertices[i + 2]);
 		normal_vertex.push_back(vertice);
 		tangent_vertex.push_back(vertice);
 		bitangent_vertex.push_back(vertice);
@@ -111,20 +92,21 @@ void normal_mapping_demo() {
 	manager.addTool("BitangentDebug", bitagent_ptr);
 
 	// Create TextTool
-	shared_ptr<TextToolModel> text_ptr = TextToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), vec2(800, 600));
+	shared_ptr<TextToolModel> text_ptr = TextToolModel::initTool(vec4(0, 0, WIDTH, HEIGHT), vec2(800, 600));
 	manager.addTool("Text", text_ptr);
 
 	Timer timer;
 	while (manager.next()) {
-		timer.tick();
+	timer.tick();
 		double delta = timer.getDelta();
 
 		ostringstream oss;
 		oss << timer.getFrameRate() << " frames/s";
 		text_ptr->clear();
 		text_ptr->print_text(oss.str(), 10, 500, 60);
+		text_ptr->flush();
 
-		manager.step(delta, vector<string> {"NormalDebug", "TangentDebug", "BitangentDebug", "Text"});
+		manager.step(delta, vector<string> {WINDOW_NAME}, vector<string> {"NormalDebug", "TangentDebug", "BitangentDebug", "Text"});
 	}
 
 }

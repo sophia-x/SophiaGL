@@ -6,7 +6,7 @@
 namespace gl
 {
 
-shared_ptr<TextToolModel> TextToolModel::getTool(const vec4& p_border, const vec2& p_size, const string& texture_path,
+shared_ptr<TextToolModel> TextToolModel::initTool(const vec4& p_border, const vec2& p_size, const string& texture_path,
         const string &vertex_path, const string &fragment_path, const vector<string>& uniforms) {
 	// Create GLObj
 	shared_ptr<GLObj> obj_ptr = GLObj::getGLObj();
@@ -66,18 +66,14 @@ void TextToolModel::print_text(const string& text, int x, int y, int size) {
 	change = true;
 }
 
-void TextToolModel::draw() {
+void TextToolModel::draw() const {
 	glViewport(border[0], border[1], border[2], border[3]);
 	shader_ptr->useShader();
 	{
-		if (change) {
-			change = false;
-			gl_obj->bufferData(vector<string> {"Vertices", "Uvs"});
-		}
-
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		{
+			setter->setup();
 			glUniform1i(shader_ptr->getUniform("half_width"), size[0] / 2);
 			glUniform1i(shader_ptr->getUniform("half_height"), size[1] / 2);
 

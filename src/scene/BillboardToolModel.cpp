@@ -6,7 +6,7 @@
 namespace gl
 {
 
-shared_ptr<BillboardToolModel> BillboardToolModel::getTool(const vec4& p_border, const vec4& p_board_border, const vec4& p_life_color, GLenum p_mode,
+shared_ptr<BillboardToolModel> BillboardToolModel::initTool(const vec4& p_border, const vec4& p_board_border, const vec4& p_life_color, GLenum p_mode,
         const string& p_texture, const string &vertex_path, const string &fragment_path, const vector<string>& uniforms) {
 	// Create GLObj
 	shared_ptr<GLObj> obj_ptr = GLObj::getGLObj();
@@ -24,10 +24,11 @@ shared_ptr<BillboardToolModel> BillboardToolModel::getTool(const vec4& p_border,
 	}
 }
 
-void BillboardToolModel::draw() {
+void BillboardToolModel::draw() const {
 	glViewport(border[0], border[1], border[2], border[3]);
 	shader_ptr->useShader();
-	{
+	{	
+		setter->setup();
 		const Camera& camera = *WindowManager::getWindowManager().currentCamera();
 		const mat4 &projection_matrix = camera.getProjectionMatrix();
 		const mat4 &view_matrix = camera.getViewMatrix();
@@ -42,20 +43,20 @@ void BillboardToolModel::draw() {
 		glBindTexture(GL_TEXTURE_2D, gl_obj->getTexture("Billboard"));
 		glUniform1i(shader_ptr->getUniform("texture_in"), 0);
 
-		for (const shared_ptr<BaseModelSpirit>& base_ptr : gl_obj->getSpirits()) {
-			glUniform3fv(shader_ptr->getUniform("billboard_pos"), 1, &(base_ptr->spirit().getPos()[0]));
-			glUniform2f(shader_ptr->getUniform("billboard_size"), base_ptr->spirit().getSize()[0], base_ptr->spirit().getSize()[1]);
+		glUniform3fv(shader_ptr->getUniform("billboard_pos"), 1, &(spirit->getPos()[0]));
+		glUniform2f(shader_ptr->getUniform("billboard_size"), spirit->getSize()[0], spirit->getSize()[1]);
 
-			board_border[2] = base_ptr->spirit().getLife();
-			glUniform4fv(shader_ptr->getUniform("border"), 1, &board_border[0]);
+		vec4 tmp_border = board_border;
+		tmp_border[2] = spirit->getLife();
+		glUniform4fv(shader_ptr->getUniform("border"), 1, &tmp_border[0]);
 
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			gl_obj->draw(draw_vec, draw_obj);
+		gl_obj->draw(draw_vec, draw_obj);
 
-			glDisable(GL_BLEND);
-		}
+		glDisable(GL_BLEND);
+
 	}
 	shader_ptr->unuseShader();
 }

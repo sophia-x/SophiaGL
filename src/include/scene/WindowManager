@@ -32,7 +32,6 @@ public:
 
 	void addWindow(const string &key, GLFWwindow* window) {
 		windows[key] = window;
-		scenes[key];
 	}
 
 	void setCurrent(const string &key) {
@@ -69,11 +68,19 @@ public:
 		return tools.at(key);
 	}
 
-	void addScene(const string& key, const shared_ptr<Scene>& scene) {
-		scenes[key].push_back(scene);
+	void addInitModel(const string& key, const shared_ptr<Model>& model) {
+		initial_model[key] = model;
 	}
 
-	const vector<shared_ptr<Scene>>& getScenes(const string& key) {
+	const shared_ptr<Model>& getInitModel(const string& key) const {
+		return initial_model.at(key);
+	}
+
+	void addScene(const string& key, const shared_ptr<Scene>& scene) {
+		scenes[key] = scene;
+	}
+
+	const shared_ptr<Scene>& getScenes(const string& key) {
 		return scenes.at(key);
 	}
 
@@ -81,15 +88,17 @@ public:
 		return current_window;
 	}
 
-	void step(float delta, const vector<string>& keys = vector<string> {}) {
+	void step(float delta, const vector<string>& scene_keys, const vector<string>& keys = vector<string> {}) {
+		Spirit::update_all(delta);
+
 		currentCamera()->update(delta);
-		for (const shared_ptr<Scene>& scene_ptr : scenes.at(current_name))
-			scene_ptr->update(delta);
+		for (const string& key : scene_keys)
+			scenes[key]->update(delta);
 		for (const string& key : keys)
 			currentTool(key)->update(delta);
 
-		for (const shared_ptr<Scene>& scene_ptr : scenes.at(current_name))
-			scene_ptr->draw();
+		for (const string& key : scene_keys)
+			scenes[key]->draw();
 		for (const string& key : keys)
 			currentTool(key)->draw();
 	}
@@ -115,8 +124,9 @@ private:
 private:
 	unordered_map<string, GLFWwindow*> windows;
 	stack<shared_ptr<Camera>> cameras;
-	unordered_map<string, vector<shared_ptr<Scene>>> scenes;
+	unordered_map<string, shared_ptr<Scene>> scenes;
 	unordered_map<string, shared_ptr<ToolModel>> tools;
+	unordered_map<string, shared_ptr<Model>> initial_model;
 
 	string current_name;
 	GLFWwindow* current_window;

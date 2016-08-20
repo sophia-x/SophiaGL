@@ -1,0 +1,21 @@
+#ifndef LISTENER_H
+#define LISTENER_H
+
+#include <scene/Model>
+
+namespace gl
+{
+
+class AddModelListener {
+public:
+	virtual void modelAdded(const shared_ptr<Model>& model, size_t i) = 0;
+};
+
+class AddModelBroadCaster {
+public:
+	virtual void addListener(AddModelListener *l) = 0;
+};
+
+}
+
+#endif

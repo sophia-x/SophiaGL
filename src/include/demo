@@ -15,5 +15,6 @@ void pick_by_color_demo();
 void billboard_demo();
 void particle_demo();
 void shadow_map_demo();
+void wood_demo();
 
 #endif

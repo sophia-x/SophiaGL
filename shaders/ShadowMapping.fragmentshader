@@ -8,7 +8,7 @@ in vec4 shadow_coord;
 
 layout(location = 0) out vec3 color;
 
-uniform sampler2D texture_in;
+uniform sampler2D diffuse_texture;
 uniform vec3 light_color;
 uniform float light_power;
 uniform vec3 material_ambient_color_ratio;
@@ -45,7 +45,7 @@ float random(vec3 seed, int i){
 
 void main(){
 	// Material properties
-	vec3 material_diffuse_color = texture( texture_in, UV ).rgb;
+	vec3 material_diffuse_color = texture( diffuse_texture, UV ).rgb;
 	vec3 material_ambient_color = material_ambient_color_ratio * material_diffuse_color;
 
 	vec3 n = normalize( normal_cameraspace );

@@ -96,8 +96,8 @@ private:
 
 class GLTextureFrame: public GLFrame {
 public:
-	static shared_ptr<GLFrame> getFrame(vec2 size) {
-		shared_ptr<GLFrame> ptr(new GLTextureFrame());
+	static shared_ptr<GLTextureFrame> getFrame(vec2 size) {
+		shared_ptr<GLTextureFrame> ptr(new GLTextureFrame());
 		ptr->init(size);
 		return ptr;
 	}

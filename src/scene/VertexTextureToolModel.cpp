@@ -6,7 +6,7 @@
 namespace gl
 {
 
-shared_ptr<VertexTextureToolModel> VertexTextureToolModel::getTool(const vec4& p_border, GLenum p_mode, GLuint texture_id,
+shared_ptr<VertexTextureToolModel> VertexTextureToolModel::initTool(const vec4& p_border, GLenum p_mode, GLuint texture_id,
         const string &vertex_path, const string &fragment_path, const vector<string>& uniforms) {
 	// Create GLObj
 	shared_ptr<GLObj> obj_ptr = GLObj::getGLObj();
@@ -22,20 +22,20 @@ shared_ptr<VertexTextureToolModel> VertexTextureToolModel::getTool(const vec4& p
 	}
 }
 
-void VertexTextureToolModel::draw() {
+void VertexTextureToolModel::draw() const {
 	glViewport(border[0], border[1], border[2], border[3]);
 	shader_ptr->useShader();
-	{
+	{	
+		setter->setup();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gl_obj->getTexture("Texture"));
 		glUniform1i(shader_ptr->getUniform("texture_in"), 0);
 
-		for (const shared_ptr<BaseModelSpirit>& base_ptr : gl_obj->getSpirits()) {
-			const mat4 &model_matrix = base_ptr->spirit().getModelMatrix();
-			glUniformMatrix4fv(shader_ptr->getUniform("M"), 1, GL_FALSE, &model_matrix[0][0]);
+		const mat4 &model_matrix = spirit->getModelMatrix();
+		glUniformMatrix4fv(shader_ptr->getUniform("M"), 1, GL_FALSE, &model_matrix[0][0]);
 
-			gl_obj->draw(draw_vec, draw_obj);
-		}
+		gl_obj->draw(draw_vec, draw_obj);
+
 	}
 	shader_ptr->unuseShader();
 }

@@ -20,11 +20,8 @@ using namespace gl;
 
 class BulletDebugDrawer_OpenGL : public btIDebugDraw {
 public:
-	BulletDebugDrawer_OpenGL(): debug_ptr{PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES)},
-		spirit_ptr {PassthroughMvpModelSpirit::getModelSpirit(Spirit::getImmortalSpirit(), vec4(1, 0, 0, 1))}
-	{
-		debug_ptr->addSpirit(spirit_ptr);
-	}
+	BulletDebugDrawer_OpenGL(): debug_ptr{PassthroughMvpToolModel::initTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES, vec4(1, 0, 0, 1))
+		                                      ->getInstance(Spirit::getImmortalSpirit())} {}
 
 	virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) {
 		vec3 line[2];
@@ -34,7 +31,7 @@ public:
 		debug_ptr->setData("Vertices", &line[0], 6);
 		debug_ptr->bufferData(vector<string> {"Vertices"});
 
-		spirit_ptr->setColor(vec4(color.x(), color.y(), color.z(), 1));
+		debug_ptr->setColor(vec4(color.x(), color.y(), color.z(), 1));
 
 		debug_ptr->draw();
 	}
@@ -56,7 +53,6 @@ public:
 private:
 	int m;
 	shared_ptr<PassthroughMvpToolModel> debug_ptr;
-	shared_ptr<PassthroughMvpModelSpirit> spirit_ptr;
 };
 
 static string message;
@@ -97,6 +93,30 @@ static void screenPosToWorldRay(
 	out_direction = normalize(ray_dir_world);
 }
 
+btDiscreteDynamicsWorld* dynamics_world;
+btCollisionShape* box_collision_shape;
+
+class BulletListener: public AddModelListener {
+public:
+	void modelAdded(const shared_ptr<Model>& model, size_t i) {
+		const quat& origentation = model->spirit_ptr()->getOrig();
+		const vec3& pos = model->spirit_ptr()->getPos();
+		btDefaultMotionState* motionstate = new btDefaultMotionState(btTransform(
+		            btQuaternion(origentation.x, origentation.y, origentation.z, origentation.w),
+		            btVector3(pos.x, pos.y, pos.z)
+		        ));
+		btRigidBody::btRigidBodyConstructionInfo rigid_body_CI(
+		    0,                  // mass, in kg. 0 -> Static object, will never move.
+		    motionstate,
+		    box_collision_shape,  // collision shape of body
+		    btVector3(0, 0, 0)  // local inertia
+		);
+		btRigidBody *rigidBody = new btRigidBody(rigid_body_CI);
+		dynamics_world->addRigidBody(rigidBody);
+		rigidBody->setUserPointer((void*)i);
+	}
+};
+
 void pick_by_bullet_demo() {
 	// Get Window Manager
 	WindowManager &manager = WindowManager::getWindowManager();
@@ -114,10 +134,22 @@ void pick_by_bullet_demo() {
 
 	setTwUI();
 
+	btBroadphaseInterface* broadphase = new btDbvtBroadphase();
+	btDefaultCollisionConfiguration* collision_configuration = new btDefaultCollisionConfiguration();
+	btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collision_configuration);
+	btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
+	dynamics_world = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collision_configuration);
+	dynamics_world->setGravity(btVector3(0, -9.81f, 0));
+	box_collision_shape = new btBoxShape(btVector3(1.0f, 1.0f, 1.0f));
+
+	BulletDebugDrawer_OpenGL mydebugdrawer;
+	dynamics_world->setDebugDrawer(&mydebugdrawer);
+
 	// Create Standard Scene
 	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(4), vec3(1), 50.0f));
+	scene_ptr->addListener(new BulletListener());
 	// Create Standard Model
-	shared_ptr<StandardModel> model_ptr = StandardModel::getModel("models/monkey.obj", vector<pair<string, string>> {
+	shared_ptr<StandardModel> model_ptr = StandardModel::initModel("models/monkey.obj", vector<pair<string, string>> {
 		make_pair(RGB, "textures/monkey.DDS")
 	});
 	// Create Material
@@ -126,45 +158,9 @@ void pick_by_bullet_demo() {
 	for (int i = 0; i < 100; i++) {
 		vec3 pos = vec3(rand() % 20 - 10, rand() % 20 - 10, rand() % 20 - 10);
 		quat orientation = quat(vec3(rand() % 360, rand() % 360, rand() % 360));
-		model_ptr->addSpirit(StandardModelSpirit::getModelSpirit(Spirit::getImmortalSpirit(pos, orientation), model_ptr->getGLObj().getTexture(RGB),
-		                     PhoneMaterial::getMaterial(RGB)));
+		scene_ptr->addModel(model_ptr->getInstance(Spirit::getImmortalSpirit(pos, orientation), model_ptr->getGLObj().getTexture(RGB),
+		                    PhoneMaterial::getMaterial(RGB)));
 	}
-
-
-	btBroadphaseInterface* broadphase = new btDbvtBroadphase();
-	btDefaultCollisionConfiguration* collision_configuration = new btDefaultCollisionConfiguration();
-	btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collision_configuration);
-	btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
-	btDiscreteDynamicsWorld* dynamics_world = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collision_configuration);
-	dynamics_world->setGravity(btVector3(0, -9.81f, 0));
-	btCollisionShape* box_collision_shape = new btBoxShape(btVector3(1.0f, 1.0f, 1.0f));
-
-	BulletDebugDrawer_OpenGL mydebugdrawer;
-	dynamics_world->setDebugDrawer(&mydebugdrawer);
-
-	const vector<shared_ptr<BaseModelSpirit>>& spirits = model_ptr->getSpirits();
-	for (size_t i = 0; i < spirits.size(); i++) {
-		const Spirit& spirit = spirits[i]->spirit();
-
-		const quat& origentation = spirit.getOrig();
-		const vec3& pos = spirit.getPos();
-		btDefaultMotionState* motionstate = new btDefaultMotionState(btTransform(
-		            btQuaternion(origentation.x, origentation.y, origentation.z, origentation.w),
-		            btVector3(pos.x, pos.y, pos.z)
-		        ));
-		btRigidBody::btRigidBodyConstructionInfo rigid_body_CI(
-		    0,                  // mass, in kg. 0 -> Static object, will never move.
-		    motionstate,
-		    box_collision_shape,  // collision shape of body
-		    btVector3(0, 0, 0)  // local inertia
-		);
-		btRigidBody *rigidBody = new btRigidBody(rigid_body_CI);
-		dynamics_world->addRigidBody(rigidBody);
-		rigidBody->setUserPointer((void*)i);
-	}
-
-	// Add Model
-	scene_ptr->addModel(RGB, model_ptr);
 	// Add Scene
 	manager.addScene(WINDOW_NAME, scene_ptr);
 
@@ -207,11 +203,10 @@ void pick_by_bullet_demo() {
 
 		dynamics_world->debugDrawWorld();
 
-		manager.step(delta);
+		manager.step(delta, vector<string> {WINDOW_NAME});
 
 		TwDraw();
 	}
 
 	TwTerminate();
 }
-

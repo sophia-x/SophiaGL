@@ -8,7 +8,8 @@
 namespace gl
 {
 
-shared_ptr<StandardModel> StandardModel::getModel(const string& obj_path, const vector<pair<string, string>>& p_textures) {
+shared_ptr<StandardModel> StandardModel::initModel(const string& obj_path, const vector<pair<string, string>>& p_textures,
+        const string &vertex_path, const string &fragment_path, const vector<string>& uniforms) {
 	// Create GLObj
 	shared_ptr<GLObj> obj_ptr = GLObj::getGLObj();
 	{
@@ -29,26 +30,30 @@ shared_ptr<StandardModel> StandardModel::getModel(const string& obj_path, const 
 		obj_ptr->addDrawObj("Element", GLElementDraw::getDrawObj(obj_ptr->getBuffer("Indices"), GL_TRIANGLES));
 	}
 
-	return shared_ptr<StandardModel>(new StandardModel(obj_ptr, vector<string> {"Vertices", "Uvs", "Normals", "Indices"}, "Element"));
+	return shared_ptr<StandardModel>(new StandardModel(obj_ptr, GLShader::getShader(vertex_path, fragment_path, uniforms),
+	                                 vector<string> {"Vertices", "Uvs", "Normals", "Indices"}, "Element"));
 }
 
-void StandardModel::draw(const shared_ptr<GLShader>& shader_ptr) const {
+void StandardModel::draw() const {
+	setter->setup();
+
 	const Camera& camera = *WindowManager::getWindowManager().currentCamera();
 	const mat4 &projection_matrix = camera.getProjectionMatrix();
 	const mat4 &view_matrix = camera.getViewMatrix();
 
-	for (const shared_ptr<BaseModelSpirit>& base_ptr : gl_obj->getSpirits()) {
-		base_ptr->setupUniforms(shader_ptr);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	glUniform1i(shader_ptr->getUniform("diffuse_texture"), 0);
 
-		Spirit& spirit = base_ptr->spirit();
-		const mat4 &model_matrix = spirit.getModelMatrix();
-		mat4 MVP = projection_matrix * view_matrix * model_matrix;
-		glUniformMatrix4fv(shader_ptr->getUniform("MVP"), 1, GL_FALSE, &MVP[0][0]);
-		glUniformMatrix4fv(shader_ptr->getUniform("M"), 1, GL_FALSE, &model_matrix[0][0]);
-		glUniformMatrix4fv(shader_ptr->getUniform("V"), 1, GL_FALSE, &view_matrix[0][0]);
+	material->setUniforms(shader_ptr);
 
-		gl_obj->draw(draw_vec, draw_obj);
-	}
+	const mat4 &model_matrix = spirit->getModelMatrix();
+	mat4 MVP = projection_matrix * view_matrix * model_matrix;
+	glUniformMatrix4fv(shader_ptr->getUniform("MVP"), 1, GL_FALSE, &MVP[0][0]);
+	glUniformMatrix4fv(shader_ptr->getUniform("M"), 1, GL_FALSE, &model_matrix[0][0]);
+	glUniformMatrix4fv(shader_ptr->getUniform("V"), 1, GL_FALSE, &view_matrix[0][0]);
+
+	gl_obj->draw(draw_vec, draw_obj);
 }
 
 }

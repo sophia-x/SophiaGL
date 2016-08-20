@@ -16,8 +16,8 @@ using namespace gl;
 
 static void addRandomParticles(size_t num, shared_ptr<ParticleToolModel> &model_ptr) {
 	for (size_t i = 0; i < num; i ++) {
-		model_ptr->addSpirit(ParticleModelSpirit::getModelSpirit(ParticleSpirit::getMortalSpirit(5.0f, vec3(0, 0, -20.0f), vec3(0.0f, 10.0f, 0.0f)
-		                     + ballRand(1.5f), vec3(0.0f, -9.81f, 0.0f)), linearRand(vec4(0.0f), vec4(vec3(1.0f), 1.0f / 3))));
+		model_ptr->addSpirit(ParticleSpirit::getMortalSpirit(5.0f, linearRand(vec4(0.0f), vec4(vec3(1.0f), 1.0f / 3)), vec3(0, 0, -20.0f),
+		                     vec3(0.0f, 10.0f, 0.0f) + ballRand(1.5f), vec3(0.0f, -9.81f, 0.0f) ));
 	}
 }
 
@@ -37,7 +37,7 @@ void particle_demo() {
 	Helper::opengl_init(BG_COLOR);
 
 	// Create Standard Model
-	shared_ptr<ParticleToolModel> model_ptr = ParticleToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_TRIANGLE_STRIP);
+	shared_ptr<ParticleToolModel> model_ptr = ParticleToolModel::initTool(vec4(0, 0, WIDTH, HEIGHT), GL_TRIANGLE_STRIP);
 	vector<GLfloat> data = {
 		-0.5f, -0.5f, 0.0f,
 		0.5f, -0.5f, 0.0f,
@@ -58,7 +58,7 @@ void particle_demo() {
 			addRandomParticles(num, model_ptr);
 		}
 
-		manager.step(delta);
+		manager.step(delta, vector<string>{});
 
 		model_ptr->update(delta);
 		model_ptr->draw();

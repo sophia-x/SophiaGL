@@ -7,8 +7,6 @@ using namespace std;
 
 #include <tools/texture_loader>
 
-#include <scene/ModelSpirit>
-
 #include <debug>
 
 #include "GLBuffer"
@@ -46,14 +44,6 @@ public:
 
 	void addDrawObj(const string& key, const shared_ptr<GLDraw>& draw_obj) {
 		draw_objs[key] = draw_obj;
-	}
-
-	virtual void addSpirit(const shared_ptr<BaseModelSpirit>& spirit) {
-		spirits.push_back(spirit);
-	}
-
-	virtual vector<shared_ptr<BaseModelSpirit>>& getSpirits() {
-		return spirits;
 	}
 
 	const shared_ptr<GLDraw>& getDrawObj(const string& key) const {
@@ -107,8 +97,6 @@ private:
 	unordered_map<string, shared_ptr<GLBuffer> > buffers;
 	unordered_map<string, GLuint> textures;
 	unordered_map<string, shared_ptr<GLDraw>> draw_objs;
-
-	vector<shared_ptr<BaseModelSpirit>> spirits;
 
 private:
 	GLObj() {

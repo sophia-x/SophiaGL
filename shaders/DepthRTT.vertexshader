@@ -3,8 +3,9 @@
 layout(location = 0) in vec3 vertex_position_modelspace;
 
 uniform mat4 depthMVP;
+uniform mat4 M;
 
 void main(){
-	gl_Position =  depthMVP * vec4(vertex_position_modelspace,1);
+	gl_Position =  depthMVP * M * vec4(vertex_position_modelspace,1);
 }
 

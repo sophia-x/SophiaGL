@@ -30,26 +30,23 @@ void standard_demo() {
 	// Create Standard Scene
 	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(4), vec3(1), 50.0f));
 	// Create Standard Model
-	shared_ptr<StandardModel> model_ptr = StandardModel::getModel("models/monkey.obj", vector<pair<string, string>> {
+	shared_ptr<StandardModel> model_ptr = StandardModel::initModel("models/monkey.obj", vector<pair<string, string>> {
 		make_pair(RGB, "textures/monkey.DDS")
 	});
 	// Create Material
 	PhoneMaterial::addMaterial(RGB, vec3(0.1f), vec3(0.3f), 5);
-	// Add ModelSpirit
-	model_ptr->addSpirit(StandardModelSpirit::getModelSpirit(Spirit::getImmortalSpirit(), model_ptr->getGLObj().getTexture(RGB),
-	                     PhoneMaterial::getMaterial(RGB)));
 	// Add Model
-	scene_ptr->addModel(RGB, model_ptr);
+	scene_ptr->addModel(model_ptr->getInstance(Spirit::getImmortalSpirit(), model_ptr->getGLObj().getTexture(RGB),
+	                    PhoneMaterial::getMaterial(RGB)));
 	// Add Scene
 	manager.addScene(WINDOW_NAME, scene_ptr);
-
 
 	Timer timer;
 	while (manager.next()) {
 		timer.tick();
 		double delta = timer.getDelta();
 
-		manager.step(delta);
+		manager.step(delta, vector<string> {WINDOW_NAME});
 	}
 
 }

@@ -8,119 +8,155 @@ using namespace std;
 #include <gl_objs/GLShader>
 #include <gl_objs/GLFrame>
 
+#include <tools/Listener>
+
 #include "Light"
 #include "Model"
 
 namespace gl
 {
 
-class Scene {
+class Scene : public AddModelBroadCaster {
 public:
 	virtual ~Scene() {}
 
-	virtual void update(float delta) = 0;
-
-	virtual void draw() const = 0;
-
-protected:
-	Scene(const shared_ptr<GLShader>& p_shader, const vec4& p_border): shader_ptr{p_shader}, border{p_border} {}
-
-protected:
-	shared_ptr<GLShader> shader_ptr;
-	vec4 border;
-	unordered_map<string, shared_ptr<Model>> models;
-};
-
-class StandardScene: public Scene {
-public:
-	static shared_ptr<StandardScene> getScene(const vec4& p_border, const PointLight& p_light,
-	        const string &vertex_path = "shaders/StandardShading.vertexshader",
-	        const string &fragment_path = "shaders/StandardShading.fragmentshader",
-	const vector<string>& uniforms = vector<string> {
-		"MVP",
-		"V",
-		"M",
-		"light_position_worldspace",
-		"texture_in",
-		"light_color",
-		"light_power",
-		"material_ambient_color_ratio",
-		"material_specular_color",
-		"material_specular_ratio"
-	}) {
-		return shared_ptr<StandardScene>(new StandardScene(GLShader::getShader(vertex_path, fragment_path, uniforms), p_border, p_light));
+	virtual void addListener(AddModelListener* listener) {
+		listeners.push_back(listener);
 	}
 
-	static shared_ptr<StandardScene> getScene(const shared_ptr<GLShader>& p_shader, const vec4& p_border, const PointLight& p_light) {
-		return shared_ptr<StandardScene>(new StandardScene(p_shader, p_border, p_light));
-	}
+	virtual void addBaseModel(const shared_ptr<Model>& model) {
+		for (AddModelListener* l : listeners)
+			l->modelAdded(model, base_models.size());
 
-	virtual void addModel(const string& key, const shared_ptr<StandardModel>& model) {
-		models[key] = model;
+		base_models.push_back(model);
 	}
 
 	virtual void update(float delta) {
-		light.update(delta);
-		for (auto it = models.begin(); it != models.end(); it++)
-			it->second->update(delta);
+		for (const shared_ptr<Model>& model : base_models)
+			model->update(delta);
 	}
 
 	virtual void draw() const {
 		glViewport(border[0], border[1], border[2], border[3]);
-		shader_ptr->useShader();
-		{
-			light.setUniforms(shader_ptr);
+		for (const shared_ptr<Model>& model_ptr : base_models) {
+			const shared_ptr<GLShader>& shader_ptr = model_ptr->getShaderPtr();
 
-			for (auto it = models.begin(); it != models.end(); it++)
-				it->second->draw(shader_ptr);
+			shader_ptr->useShader();
+			{
+				model_ptr->draw();
+			}
+			shader_ptr->unuseShader();
 		}
-		shader_ptr->unuseShader();
 	}
 
 protected:
-	StandardScene(const shared_ptr<GLShader>& p_shader, const vec4& p_border, const PointLight& p_light):
-		Scene{p_shader, p_border}, light{p_light} {}
+	Scene(const vec4& p_border): border{p_border} {}
+	Scene() {}
+
+protected:
+	vec4 border;
+	vector<shared_ptr<Model>> base_models;
+
+	vector<AddModelListener *> listeners;
+};
+
+class CombineScene: public Scene {
+public:
+	static shared_ptr<CombineScene> getScene() {
+		return shared_ptr<CombineScene>(new CombineScene());
+	}
+
+	virtual ~CombineScene() {}
+
+	virtual void addScene(const shared_ptr<Scene>& scene) {
+		scenes.push_back(scene);
+	}
+
+	virtual void update(float delta) {
+		for (const shared_ptr<Scene>& scene : scenes)
+			scene->update(delta);
+	}
+
+	virtual void draw() const {
+		for (const shared_ptr<Scene>& scene : scenes)
+			scene->draw();
+	}
+
+protected:
+	CombineScene() {}
+
+protected:
+	vector<shared_ptr<Scene>> scenes;
+};
+
+class StandardScene: public Scene {
+public:
+	static shared_ptr<StandardScene> getScene(const vec4& p_border, const PointLight& p_light) {
+		return shared_ptr<StandardScene>(new StandardScene(p_border, p_light));
+	}
+
+	virtual void addModel(const shared_ptr<StandardModel>& model) {
+		for (AddModelListener* l : listeners)
+			l->modelAdded(model, models.size());
+		models.push_back(model);
+	}
+
+	virtual void update(float delta) {
+		Scene::update(delta);
+
+		light.update(delta);
+		for (const shared_ptr<Model>& model : models)
+			model->update(delta);
+	}
+
+	virtual void draw() const {
+		Scene::draw();
+
+		glViewport(border[0], border[1], border[2], border[3]);
+		for (const shared_ptr<Model>& model_ptr : models) {
+			const shared_ptr<GLShader>& shader_ptr = model_ptr->getShaderPtr();
+
+			shader_ptr->useShader();
+			{
+				light.setUniforms(shader_ptr);
+				model_ptr->draw();
+			}
+			shader_ptr->unuseShader();
+		}
+	}
+
+protected:
+	StandardScene(const vec4& p_border, const PointLight& p_light): Scene{p_border}, light{p_light} {}
 
 protected:
 	PointLight light;
+	vector<shared_ptr<StandardModel>> models;
 };
 
 class ShadowMapScene: public Scene {
 public:
-	static shared_ptr<ShadowMapScene> getScene(const vec4& p_border, const DirectionLight& p_light, const vec2& p_size = vec2(1024), float p_bias_ratio = 0.005,
-	        const string &vertex_path = "shaders/ShadowMapping.vertexshader",
-	        const string &fragment_path = "shaders/ShadowMapping.fragmentshader",
-	const vector<string>& uniforms = vector<string> {
-		"MVP",
-		"V",
-		"M",
-		"depth_bias_MVP",
-		"texture_in",
-		"light_direction_worldspace",
-		"light_color",
-		"light_power",
-		"material_ambient_color_ratio",
-		"material_specular_color",
-		"material_specular_ratio",
-		"bias_ratio",
-		"shadowMap"
-	}, const string& depth_vertex_path = "shaders/DepthRTT.vertexshader", const string& depth_fragment_path = "shaders/DepthRTT.fragmentshader",
-	const vector<string>& depth_uniforms = vector<string> {
-		"depthMVP"
+	static shared_ptr<ShadowMapScene> getScene(const vec4& p_border, const DirectionLight& p_light, const vec2& p_size = vec2(1024),
+	        float p_bias_ratio = 0.005, const string& depth_vertex_path = "shaders/DepthRTT.vertexshader",
+	const string& depth_fragment_path = "shaders/DepthRTT.fragmentshader", const vector<string>& depth_uniforms = vector<string> {
+		"depthMVP",
+		"M"
 	}) {
-		return shared_ptr<ShadowMapScene>(new ShadowMapScene(GLShader::getShader(vertex_path, fragment_path, uniforms),
-		                                  GLShader::getShader(depth_vertex_path, depth_fragment_path, depth_uniforms), p_border, p_light, p_size, p_bias_ratio));
+		return shared_ptr<ShadowMapScene>(new ShadowMapScene( GLShader::getShader(depth_vertex_path, depth_fragment_path, depth_uniforms),
+		                                  p_border, p_light, p_size, p_bias_ratio));
 	}
 
-	static shared_ptr<ShadowMapScene> getScene(const shared_ptr<GLShader>& p_shader, const shared_ptr<GLShader>& p_depth_shader,
-	        const vec4& p_border, const DirectionLight& p_light, const vec2& p_size, float p_bias_ratio)
+	static shared_ptr<ShadowMapScene> getScene(const shared_ptr<GLShader>& p_depth_shader, const vec4& p_border,
+	        const DirectionLight& p_light, const vec2& p_size, float p_bias_ratio)
 	{
-		return shared_ptr<ShadowMapScene>(new ShadowMapScene(p_shader, p_depth_shader, p_border, p_light, p_size, p_bias_ratio));
+		return shared_ptr<ShadowMapScene>(new ShadowMapScene(p_depth_shader, p_border, p_light, p_size, p_bias_ratio));
 	}
 
-	virtual void addModel(const string& key, const shared_ptr<StandardModel>& model) {
-		models[key] = model;
-		vertex_models[key] = VertexModel::getModel(model->getGLObjPtr());
+	virtual void addModel(const shared_ptr<StandardModel>& model) {
+		for (AddModelListener* l : listeners)
+			l->modelAdded(model, models.size());
+
+		models.push_back(model);
+		vertex_models.push_back(ShadowMapModel::getModel(model->getGLObjPtr(), depth_shader, model->spirit_ptr()));
 	}
 
 	virtual GLuint getTexture(size_t type) {
@@ -128,9 +164,13 @@ public:
 	}
 
 	virtual void update(float delta) {
+		Scene::update(delta);
+
 		light.update(delta);
-		for (auto it = models.begin(); it != models.end(); it++)
-			it->second->update(delta);
+		for (const shared_ptr<Model>& model_ptr : models)
+			model_ptr->update(delta);
+		for (const shared_ptr<Model>& model_ptr : vertex_models)
+			model_ptr->update(delta);
 	}
 
 	virtual void draw() const {
@@ -142,48 +182,94 @@ public:
 		{
 			glUniformMatrix4fv(depth_shader->getUniform("depthMVP"), 1, GL_FALSE, &(light.getMVP()[0][0]));
 
-			for (auto it = vertex_models.begin(); it != vertex_models.end(); it++)
-				it->second->draw(depth_shader);
+			for (const shared_ptr<Model>& model_ptr : vertex_models)
+				model_ptr->draw();
 		}
 		depth_shader->unuseShader();
 		frame_ptr->unuseFrameBuffer();
 
+		Scene::draw();
+
 		glViewport(border[0], border[1], border[2], border[3]);
-		shader_ptr->useShader();
-		{
-			light.setUniforms(shader_ptr);
+		for (const shared_ptr<Model>& model_ptr : models) {
+			const shared_ptr<GLShader>& shader_ptr = model_ptr->getShaderPtr();
 
-			mat4 bias_matrix(
-			    0.5, 0.0, 0.0, 0.0,
-			    0.0, 0.5, 0.0, 0.0,
-			    0.0, 0.0, 0.5, 0.0,
-			    0.5, 0.5, 0.5, 1.0
-			);
-			mat4 depth_bias_MVP = bias_matrix * light.getMVP();
-			glUniformMatrix4fv(shader_ptr->getUniform("depth_bias_MVP"), 1, GL_FALSE, &depth_bias_MVP[0][0]);
+			shader_ptr->useShader();
+			{
+				light.setUniforms(shader_ptr);
 
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, frame_ptr->getTexture(0));
-			glUniform1i(shader_ptr->getUniform("shadowMap"), 1);
-			glUniform1f(shader_ptr->getUniform("bias_ratio"), 0.005);
+				static mat4 bias_matrix(
+				    0.5, 0.0, 0.0, 0.0,
+				    0.0, 0.5, 0.0, 0.0,
+				    0.0, 0.0, 0.5, 0.0,
+				    0.5, 0.5, 0.5, 1.0
+				);
+				mat4 depth_bias_MVP = bias_matrix * light.getMVP();
+				glUniformMatrix4fv(shader_ptr->getUniform("depth_bias_MVP"), 1, GL_FALSE, &depth_bias_MVP[0][0]);
 
-			for (auto it = models.begin(); it != models.end(); it++)
-				it->second->draw(shader_ptr);
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, frame_ptr->getTexture(0));
+				glUniform1i(shader_ptr->getUniform("shadowMap"), 1);
+				glUniform1f(shader_ptr->getUniform("bias_ratio"), 0.005);
+
+				model_ptr->draw();
+			}
+			shader_ptr->unuseShader();
 		}
-		shader_ptr->unuseShader();
 	}
 
 protected:
-	ShadowMapScene(const shared_ptr<GLShader>& p_shader, const shared_ptr<GLShader>& p_depth_shader, const vec4& p_border, const DirectionLight& p_light, const vec2& p_size, float p_bias_ratio):
-		Scene{p_shader, p_border}, light{p_light}, frame_ptr{GLDepthFrame::getFrame(p_size)}, depth_shader{p_depth_shader}, size{p_size}, bias_ratio{p_bias_ratio} {}
+	ShadowMapScene(const shared_ptr<GLShader>& p_depth_shader, const vec4& p_border, const DirectionLight& p_light, const vec2& p_size,
+	               float p_bias_ratio): Scene{p_border}, light{p_light}, frame_ptr{GLDepthFrame::getFrame(p_size)},
+		depth_shader{p_depth_shader}, size{p_size}, bias_ratio{p_bias_ratio} {}
 
 protected:
 	DirectionLight light;
 	shared_ptr<GLShader> depth_shader;
 	shared_ptr<GLDepthFrame> frame_ptr;
-	unordered_map<string, shared_ptr<VertexModel>> vertex_models;
+	vector<shared_ptr<ShadowMapModel>> vertex_models;
 	vec2 size;
 	float bias_ratio;
+
+	vector<shared_ptr<StandardModel>> models;
+};
+
+class RenderTextureScene: public StandardScene {
+public:
+	static shared_ptr<RenderTextureScene> getScene(const vec4& p_border, const PointLight& p_light) {
+		return shared_ptr<RenderTextureScene>(new RenderTextureScene(p_border, p_light));
+	}
+
+	virtual void addModel(const shared_ptr<StandardModel>& model) {
+		for (AddModelListener* l : listeners)
+			l->modelAdded(model, models.size());
+
+		models.push_back(model);
+	}
+
+	virtual GLuint getTexture(size_t type) {
+		return frame_ptr->getTexture(type);
+	}
+
+	virtual void draw() const {
+		frame_ptr->useFrameBuffer();
+		glViewport(border[0], border[1], border[2], border[3]);
+
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		StandardScene::draw();
+
+		frame_ptr->unuseFrameBuffer();
+	}
+
+protected:
+	RenderTextureScene(const vec4& p_border, const PointLight& p_light): StandardScene{p_border, p_light},
+		frame_ptr{GLTextureFrame::getFrame(vec2(border[2], border[3]))} {}
+
+protected:
+	shared_ptr<GLTextureFrame> frame_ptr;
 };
 
 }

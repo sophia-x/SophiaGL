@@ -151,6 +151,15 @@ static void screenPosToWorldRay(
 	out_direction = normalize(ray_dir_world);
 }
 
+static vector<shared_ptr<Spirit>> spirits;
+
+class UdfListener: public AddModelListener {
+public:
+	void modelAdded(const shared_ptr<Model>& model, size_t i) {
+		spirits.push_back(model->spirit_ptr());
+	}
+};
+
 void pick_by_udf_demo() {
 	// Get Window Manager
 	WindowManager &manager = WindowManager::getWindowManager();
@@ -170,8 +179,9 @@ void pick_by_udf_demo() {
 
 	// Create Standard Scene
 	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(4), vec3(1), 50.0f));
+	scene_ptr->addListener(new UdfListener);
 	// Create Standard Model
-	shared_ptr<StandardModel> model_ptr = StandardModel::getModel("models/monkey.obj", vector<pair<string, string>> {
+	shared_ptr<StandardModel> model_ptr = StandardModel::initModel("models/monkey.obj", vector<pair<string, string>> {
 		make_pair(RGB, "textures/monkey.DDS")
 	});
 	// Create Material
@@ -180,12 +190,10 @@ void pick_by_udf_demo() {
 	for (int i = 0; i < 100; i++) {
 		vec3 pos = vec3(rand() % 20 - 10, rand() % 20 - 10, rand() % 20 - 10);
 		quat orientation = quat(vec3(rand() % 360, rand() % 360, rand() % 360));
-		model_ptr->addSpirit(StandardModelSpirit::getModelSpirit(Spirit::getImmortalSpirit(pos, orientation), model_ptr->getGLObj().getTexture(RGB),
-		                     PhoneMaterial::getMaterial(RGB)));
+		scene_ptr->addModel(model_ptr->getInstance(Spirit::getImmortalSpirit(pos, orientation), model_ptr->getGLObj().getTexture(RGB),
+		                    PhoneMaterial::getMaterial(RGB)));
 	}
 
-	// Add Model
-	scene_ptr->addModel(RGB, model_ptr);
 	// Add Scene
 	manager.addScene(WINDOW_NAME, scene_ptr);
 
@@ -212,9 +220,8 @@ void pick_by_udf_demo() {
 			message = "background";
 			float min_dist = -1;
 			size_t id = -1;
-			const vector<shared_ptr<BaseModelSpirit>>& spirits = model_ptr->getSpirits();
 			for (size_t i = 0; i < spirits.size(); i++) {
-				const Spirit& spirit = spirits[i]->spirit();
+				const Spirit& spirit = *spirits[i];
 
 				float intersection_distance;
 				vec3 aabb_min(-1.0f, -1.0f, -1.0f);
@@ -242,7 +249,7 @@ void pick_by_udf_demo() {
 			}
 		}
 
-		manager.step(delta);
+		manager.step(delta, vector<string> {WINDOW_NAME});
 
 		TwDraw();
 	}

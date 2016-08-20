@@ -78,20 +78,17 @@ void rotation_demo() {
 	// Create Standard Scene
 	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(4), vec3(1), 50.0f));
 	// Create Standard Model
-	shared_ptr<StandardModel> model_ptr = StandardModel::getModel("models/monkey.obj", vector<pair<string, string>> {
+	shared_ptr<StandardModel> model_ptr = StandardModel::initModel("models/monkey.obj", vector<pair<string, string>> {
 		make_pair(RGB, "textures/monkey.DDS")
 	});
 	// Create Material
 	PhoneMaterial::addMaterial(RGB, vec3(0.1f), vec3(0.3f), 5);
 	// Add ModelSpirit
-	shared_ptr<StandardModelSpirit> euler_spirit_ptr = StandardModelSpirit::getModelSpirit(Spirit::getImmortalSpirit(), model_ptr->getGLObj().getTexture(RGB),
-	        PhoneMaterial::getMaterial(RGB));
-	shared_ptr<StandardModelSpirit> quat_spirit_ptr = StandardModelSpirit::getModelSpirit(Spirit::getImmortalSpirit(), model_ptr->getGLObj().getTexture(RGB),
-	        PhoneMaterial::getMaterial(RGB));
-	model_ptr->addSpirit(euler_spirit_ptr);
-	model_ptr->addSpirit(quat_spirit_ptr);
-	// Add Model
-	scene_ptr->addModel(RGB, model_ptr);
+	shared_ptr<Spirit> euler_spirit_ptr = Spirit::getImmortalSpirit();
+	shared_ptr<Spirit> quat_spirit_ptr = Spirit::getImmortalSpirit();
+	scene_ptr->addModel(model_ptr->getInstance(euler_spirit_ptr, model_ptr->getGLObj().getTexture(RGB), PhoneMaterial::getMaterial(RGB)));
+	scene_ptr->addModel(model_ptr->getInstance(quat_spirit_ptr, model_ptr->getGLObj().getTexture(RGB), PhoneMaterial::getMaterial(RGB)));
+
 	// Add Scene
 	manager.addScene(WINDOW_NAME, scene_ptr);
 
@@ -101,11 +98,11 @@ void rotation_demo() {
 		double delta = timer.getDelta();
 
 		{
-			euler_spirit_ptr->spirit().setPos(euler_pos);
-			quat_spirit_ptr->spirit().setPos(quat_pos);
+			euler_spirit_ptr->setPos(euler_pos);
+			quat_spirit_ptr->setPos(quat_pos);
 
 			euler_orig.y += 3.14159f / 2.0f * delta;
-			euler_spirit_ptr->spirit().setOrig(toQuat(eulerAngleYXZ(euler_orig.y, euler_orig.x, euler_orig.z)));
+			euler_spirit_ptr->setOrig(toQuat(eulerAngleYXZ(euler_orig.y, euler_orig.x, euler_orig.z)));
 
 			if (face_to) {
 				vec3 dir = euler_pos - quat_pos;
@@ -115,10 +112,10 @@ void rotation_demo() {
 				// And interpolate
 				quat_orig = Quat::rotateTowards(quat_orig, orig, 1.0f * delta);
 			}
-			quat_spirit_ptr->spirit().setOrig(quat_orig);
+			quat_spirit_ptr->setOrig(quat_orig);
 		}
 
-		manager.step(delta);
+		manager.step(delta, vector<string> {WINDOW_NAME});
 
 		TwDraw();
 	}
