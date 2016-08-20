@@ -1,0 +1,40 @@
+#version 330 core
+
+layout(location = 0) in vec3 vertex_position_modelspace;
+layout(location = 1) in vec2 vertex_UV;
+layout(location = 2) in vec3 vertex_normal_modelspace;
+
+out vec2 UV;
+out vec3 normal_cameraspace;
+out vec3 eye_direction_cameraspace;
+out vec3 light_direction_cameraspace;
+out vec4 shadow_coord;
+
+uniform mat4 MVP;
+uniform mat4 V;
+uniform mat4 M;
+uniform vec3 light_direction_worldspace;
+uniform mat4 depth_bias_MVP;
+
+void main(){
+	// Output position of the vertex, in clip space : MVP * position
+	gl_Position =  MVP * vec4(vertex_position_modelspace,1);
+	
+	shadow_coord = depth_bias_MVP * vec4(vertex_position_modelspace,1);
+	
+	// Position of the vertex, in worldspace : M * position
+	// position_worldspace = (M * vec4(vertex_position_modelspace,1)).xyz;
+	
+	// Vector that goes from the vertex to the camera, in camera space.
+	// In camera space, the camera is at the origin (0,0,0).
+	eye_direction_cameraspace = vec3(0,0,0) - ( V * M * vec4(vertex_position_modelspace,1)).xyz;
+
+	// Vector that goes from the vertex to the light, in camera space
+	light_direction_cameraspace = (V*vec4(light_direction_worldspace,0)).xyz;
+	
+	// Normal of the the vertex, in camera space
+	normal_cameraspace = ( V * transpose(inverse(M)) * vec4(vertex_normal_modelspace,0)).xyz;
+	
+	UV = vertex_UV;
+}
+

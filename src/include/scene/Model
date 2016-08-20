@@ -13,12 +13,8 @@ class Model {
 public:
 	virtual ~Model() {}
 
-	virtual void addSpirit(const shared_ptr<BaseModelSpirit>& spirit) {
-		spirits.push_back(spirit);
-	}
-
 	virtual void update(float delta) {
-		for (shared_ptr<BaseModelSpirit>& spirit_ptr : spirits)
+		for (shared_ptr<BaseModelSpirit>& spirit_ptr : gl_obj->getSpirits())
 			spirit_ptr->spirit().update(delta);
 	}
 
@@ -31,7 +27,7 @@ public:
 	}
 
 	virtual const vector<shared_ptr<BaseModelSpirit>>& getSpirits() const {
-		return spirits;
+		return gl_obj->getSpirits();
 	}
 
 	virtual void bufferData(const vector<string>& keys) const {
@@ -59,8 +55,6 @@ protected:
 protected:
 	shared_ptr<GLObj> gl_obj;
 
-	vector<shared_ptr<BaseModelSpirit>> spirits;
-
 	vector<string> draw_vec;
 	string draw_obj;
 };
@@ -69,6 +63,10 @@ class StandardModel: public Model {
 public:
 	static shared_ptr<StandardModel> getModel(const string& obj_path, const vector<pair<string, string>>& p_textures);
 
+	virtual void addSpirit(const shared_ptr<StandardModelSpirit>& spirit) {
+		gl_obj->addSpirit(spirit);
+	}
+
 	virtual void draw(const shared_ptr<GLShader>& shader_ptr) const;
 
 protected:
@@ -76,15 +74,40 @@ protected:
 		Model{p_obj, p_draw_vec, p_draw_obj} {}
 };
 
-class NormalMappingModel: public Model {
+class VertexModel: public Model {
+public:
+	static shared_ptr<VertexModel> getModel(const shared_ptr<GLObj>& p_obj) {
+		return shared_ptr<VertexModel>(new VertexModel(p_obj, vector<string> {"Vertices", "Indices"}, "Element"));
+	}
+
+	virtual void addSpirit(const shared_ptr<BaseModelSpirit>& spirit) {
+		gl_obj->addSpirit(spirit);
+	}
+
+	virtual void draw(const shared_ptr<GLShader>& shader_ptr) const {
+		for (const shared_ptr<BaseModelSpirit>& base_ptr : gl_obj->getSpirits()) {
+			gl_obj->draw(draw_vec, draw_obj);
+		}
+	}
+
+protected:
+	VertexModel(const shared_ptr<GLObj>& p_obj, const vector<string>& p_draw_vec, const string& p_draw_obj):
+		Model{p_obj, p_draw_vec, p_draw_obj} {}
+};
+
+class NormalMappingModel: public StandardModel {
 public:
 	static shared_ptr<NormalMappingModel> getModel(const string& obj_path, const vector<pair<string, string>>& p_textures);
+
+	virtual void addSpirit(const shared_ptr<NormalMappingModelSpirit>& spirit) {
+		gl_obj->addSpirit(spirit);
+	}
 
 	virtual void draw(const shared_ptr<GLShader>& shader_ptr) const;
 
 protected:
 	NormalMappingModel(const shared_ptr<GLObj>& p_obj, const vector<string>& p_draw_vec, const string& p_draw_obj):
-		Model{p_obj, p_draw_vec, p_draw_obj} {}
+		StandardModel{p_obj, p_draw_vec, p_draw_obj} {}
 };
 
 class ToolModel: public Model {
@@ -147,6 +170,10 @@ public:
 		"MVP"
 	});
 
+	virtual void addSpirit(const shared_ptr<PassthroughMvpModelSpirit>& spirit) {
+		gl_obj->addSpirit(spirit);
+	}
+
 	virtual ~PassthroughMvpToolModel() {}
 
 	virtual void draw();
@@ -169,6 +196,10 @@ public:
 		"MVP"
 	});
 
+	virtual void addSpirit(const shared_ptr<BaseModelSpirit>& spirit) {
+		gl_obj->addSpirit(spirit);
+	}
+
 	virtual ~VertexColorToolModel() {}
 
 	virtual void draw();
@@ -177,6 +208,33 @@ protected:
 	VertexColorToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, GLenum p_mode,
 	                     const vector<string>& p_draw_vec, const string& p_draw_obj): ToolModel{p_obj, p_shader, p_border,
 		                             p_draw_vec, p_draw_obj}, mode{p_mode} {}
+
+private:
+	GLenum mode;
+};
+
+class VertexTextureToolModel: public ToolModel {
+public:
+	static shared_ptr<VertexTextureToolModel> getTool(const vec4& p_border, GLenum p_mode, GLuint texture_id,
+	        const string &vertex_path = "shaders/Passthrough.vertexshader",
+	        const string &fragment_path = "shaders/Passthrough.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"texture_in",
+		"M"
+	});
+
+	virtual void addSpirit(const shared_ptr<BaseModelSpirit>& spirit) {
+		gl_obj->addSpirit(spirit);
+	}
+
+	virtual ~VertexTextureToolModel() {}
+
+	virtual void draw();
+
+protected:
+	VertexTextureToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, GLenum p_mode,
+	                       const vector<string>& p_draw_vec, const string& p_draw_obj): ToolModel{p_obj, p_shader, p_border,
+		                               p_draw_vec, p_draw_obj}, mode{p_mode} {}
 
 private:
 	GLenum mode;
@@ -200,6 +258,10 @@ public:
 
 	virtual ~BillboardToolModel() {}
 
+	virtual void addSpirit(const shared_ptr<BaseModelSpirit>& spirit) {
+		gl_obj->addSpirit(spirit);
+	}
+
 	virtual void draw();
 
 protected:
@@ -212,6 +274,38 @@ protected:
 	vec4 life_color;
 };
 
-}
+class ParticleToolModel: public ToolModel {
+public:
+	static shared_ptr<ParticleToolModel> getTool(const vec4& p_border, GLenum mode,
+	        const string& p_texture = "textures/Particle.DDS", const string &vertex_path = "shaders/Particle.vertexshader",
+	        const string &fragment_path = "shaders/Particle.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"texture_in",
+		"camera_right_worldspace",
+		"camera_up_worldspace",
+		"vp"
+	});
 
+	virtual ~ParticleToolModel() {}
+
+	virtual void addSpirit(const shared_ptr<ParticleModelSpirit>& spirit) {
+		spirits.push_back(spirit);
+	}
+
+	virtual void update(float delta);
+
+	virtual void draw();
+
+protected:
+	ParticleToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border,
+	                  const vector<string>& p_draw_vec, const string& p_draw_obj):
+		ToolModel{p_obj, p_shader, p_border, p_draw_vec, p_draw_obj} {}
+
+	virtual void sortByLife();
+
+protected:
+	vector<shared_ptr<BaseModelSpirit>> spirits;
+};
+
+}
 #endif

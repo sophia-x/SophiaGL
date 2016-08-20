@@ -44,27 +44,10 @@ void NormalMappingModel::draw(const shared_ptr<GLShader>& shader_ptr) const {
 	const mat4 &projection_matrix = camera.getProjectionMatrix();
 	const mat4 &view_matrix = camera.getViewMatrix();
 
-	for (const shared_ptr<BaseModelSpirit>& base_ptr : spirits) {
-		NormalMappingModelSpirit& model_spirit = (NormalMappingModelSpirit&)(*base_ptr);
-		Spirit& spirit = model_spirit.spirit();
+	for (const shared_ptr<BaseModelSpirit>& base_ptr : gl_obj->getSpirits()) {
+		base_ptr->setupUniforms(shader_ptr);
 
-		model_spirit.getMaterial().setUniforms(vector<GLuint> {
-			shader_ptr->getUniform("material_ambient_color_ratio"),
-			shader_ptr->getUniform("material_specular_color"),
-			shader_ptr->getUniform("material_specular_ratio")
-		});
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, model_spirit.getTexture());
-		glUniform1i(shader_ptr->getUniform("diffuse_texture"), 0);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, model_spirit.getNormalTexture());
-		glUniform1i(shader_ptr->getUniform("normal_texture"), 1);
-
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, model_spirit.getSpecularTexture());
-		glUniform1i(shader_ptr->getUniform("specular_texture"), 2);
+		Spirit& spirit = base_ptr->spirit();
 
 		const mat4 &model_matrix = spirit.getModelMatrix();
 		mat4 MVP = projection_matrix * view_matrix * model_matrix;

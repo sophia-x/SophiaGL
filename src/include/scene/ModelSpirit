@@ -22,6 +22,8 @@ public:
 		return spirit_ptr;
 	}
 
+	virtual void setupUniforms(const shared_ptr<GLShader>& shader_ptr) const {}
+
 protected:
 	BaseModelSpirit(const shared_ptr<Spirit>& p_spirit): spirit_ptr{p_spirit} {}
 
@@ -31,22 +33,22 @@ protected:
 
 class StandardModelSpirit: public BaseModelSpirit {
 public:
-	static shared_ptr<StandardModelSpirit> getModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, GLuint p_texture_id,
+	static shared_ptr<StandardModelSpirit> getModelSpirit(const shared_ptr<Spirit>& p_spirit_ptr, GLuint p_texture_id,
 	        const PhoneMaterial& p_material)
 	{
 		return shared_ptr<StandardModelSpirit>(new StandardModelSpirit(p_spirit_ptr, p_texture_id, p_material));
 	}
 
-	const PhoneMaterial& getMaterial() const {
-		return material;
-	}
+	virtual void setupUniforms(const shared_ptr<GLShader>& shader_ptr) const {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture_id);
+		glUniform1i(shader_ptr->getUniform("texture_in"), 0);
 
-	const GLuint getTexture() const {
-		return texture_id;
+		material.setUniforms(shader_ptr);
 	}
 
 protected:
-	StandardModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, GLuint p_texture_id, const PhoneMaterial& p_material):
+	StandardModelSpirit(const shared_ptr<Spirit>& p_spirit_ptr, GLuint p_texture_id, const PhoneMaterial& p_material):
 		BaseModelSpirit{p_spirit_ptr}, texture_id{p_texture_id}, material{p_material} {}
 
 protected:
@@ -56,23 +58,32 @@ protected:
 
 class NormalMappingModelSpirit: public StandardModelSpirit {
 public:
-	static shared_ptr<NormalMappingModelSpirit> getModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, GLuint p_diffuse_id,
+	static shared_ptr<NormalMappingModelSpirit> getModelSpirit(const shared_ptr<Spirit>& p_spirit_ptr, GLuint p_diffuse_id,
 	        GLuint p_normal_id, GLuint p_specular_id, const PhoneMaterial& p_material)
 	{
 		return shared_ptr<NormalMappingModelSpirit>(new NormalMappingModelSpirit(p_spirit_ptr, p_diffuse_id, p_normal_id,
 		        p_specular_id, p_material));
 	}
 
-	const GLuint getNormalTexture() const {
-		return normal_id;
-	}
+	virtual void setupUniforms(const shared_ptr<GLShader>& shader_ptr) const {
+		material.setUniforms(shader_ptr);
 
-	const GLuint getSpecularTexture() const {
-		return specular_id;
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture_id);
+		glUniform1i(shader_ptr->getUniform("diffuse_texture"), 0);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, normal_id);
+		glUniform1i(shader_ptr->getUniform("normal_texture"), 1);
+
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, specular_id);
+		glUniform1i(shader_ptr->getUniform("specular_texture"), 2);
+
 	}
 
 protected:
-	NormalMappingModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, GLuint p_diffuse_id, GLuint p_normal_id, GLuint p_specular_id,
+	NormalMappingModelSpirit(const shared_ptr<Spirit>& p_spirit_ptr, GLuint p_diffuse_id, GLuint p_normal_id, GLuint p_specular_id,
 	                         const PhoneMaterial& p_material):
 		StandardModelSpirit{p_spirit_ptr, p_diffuse_id, p_material}, normal_id{p_normal_id}, specular_id{p_specular_id} {}
 
@@ -82,28 +93,47 @@ protected:
 
 class PassthroughMvpModelSpirit: public BaseModelSpirit {
 public:
-	static shared_ptr<PassthroughMvpModelSpirit> getModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, const vec3& p_color)
+	static shared_ptr<PassthroughMvpModelSpirit> getModelSpirit(const shared_ptr<Spirit>& p_spirit_ptr, const vec4& p_color)
 	{
 		return shared_ptr<PassthroughMvpModelSpirit>(new PassthroughMvpModelSpirit(p_spirit_ptr, p_color));
 	}
 
-	const vec3& getColor() const {
-		return color;
-	}
-
-	void setColor(const vec3& p_color) {
+	virtual void setColor(const vec4& p_color) {
 		color = p_color;
 	}
 
+	virtual void setupUniforms(const shared_ptr<GLShader>& shader_ptr) const {
+		glUniform4fv(shader_ptr->getUniform("COLOR"), 1, &color[0]);
+	}
+
 protected:
-	PassthroughMvpModelSpirit(const shared_ptr<Spirit> p_spirit_ptr, const vec3& p_color):
+	PassthroughMvpModelSpirit(const shared_ptr<Spirit>& p_spirit_ptr, const vec4& p_color):
 		BaseModelSpirit{p_spirit_ptr}, color{p_color} {}
 
 protected:
-	vec3 color;
+	vec4 color;
+};
+
+class ParticleModelSpirit: public PassthroughMvpModelSpirit {
+public:
+	static shared_ptr<ParticleModelSpirit> getModelSpirit(const shared_ptr<ParticleSpirit>& p_spirit_ptr, const vec4& p_color)
+	{
+		return shared_ptr<ParticleModelSpirit>(new ParticleModelSpirit(p_spirit_ptr, p_color));
+	}
+
+	virtual const vec4& getColor() {
+		return color;
+	}
+
+	virtual void setupUniforms(const shared_ptr<GLShader>& shader_ptr) const {
+		glUniform4fv(shader_ptr->getUniform("COLOR"), 1, &color[0]);
+	}
+
+protected:
+	ParticleModelSpirit(const shared_ptr<ParticleSpirit>& p_spirit_ptr, const vec4& p_color):
+		PassthroughMvpModelSpirit{p_spirit_ptr, p_color} {}
 };
 
 }
-
 
 #endif

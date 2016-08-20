@@ -21,7 +21,7 @@ using namespace gl;
 class BulletDebugDrawer_OpenGL : public btIDebugDraw {
 public:
 	BulletDebugDrawer_OpenGL(): debug_ptr{PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES)},
-		spirit_ptr {PassthroughMvpModelSpirit::getModelSpirit(Spirit::getImmortalSpirit(), vec3(1, 0, 0))}
+		spirit_ptr {PassthroughMvpModelSpirit::getModelSpirit(Spirit::getImmortalSpirit(), vec4(1, 0, 0, 1))}
 	{
 		debug_ptr->addSpirit(spirit_ptr);
 	}
@@ -34,7 +34,7 @@ public:
 		debug_ptr->setData("Vertices", &line[0], 6);
 		debug_ptr->bufferData(vector<string> {"Vertices"});
 
-		spirit_ptr->setColor(vec3(color.x(), color.y(), color.z()));
+		spirit_ptr->setColor(vec4(color.x(), color.y(), color.z(), 1));
 
 		debug_ptr->draw();
 	}
@@ -115,9 +115,9 @@ void pick_by_bullet_demo() {
 	setTwUI();
 
 	// Create Standard Scene
-	shared_ptr<Scene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(4), vec3(1), 50.0f));
+	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(4), vec3(1), 50.0f));
 	// Create Standard Model
-	shared_ptr<Model> model_ptr = StandardModel::getModel("models/monkey.obj", vector<pair<string, string>> {
+	shared_ptr<StandardModel> model_ptr = StandardModel::getModel("models/monkey.obj", vector<pair<string, string>> {
 		make_pair(RGB, "textures/monkey.DDS")
 	});
 	// Create Material

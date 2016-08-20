@@ -15,7 +15,7 @@ shared_ptr<BillboardToolModel> BillboardToolModel::getTool(const vec4& p_border,
 		obj_ptr->addBuffer("Vertices", GLDataObj::getGLBuffer((void*)0, 0, 3));
 		obj_ptr->addBuffer("Uvs", GLDataObj::getGLBuffer((void*)0, 0, 2));
 
-		obj_ptr->addDrawObj("Array", GLArrayDraw::getDrawObj(obj_ptr->getBuffer("Vertices"), GL_TRIANGLE_STRIP));
+		obj_ptr->addDrawObj("Array", GLArrayDraw::getDrawObj(obj_ptr->getBuffer("Vertices"), p_mode));
 
 		obj_ptr->addTexture("Billboard", p_texture);
 
@@ -42,7 +42,7 @@ void BillboardToolModel::draw() {
 		glBindTexture(GL_TEXTURE_2D, gl_obj->getTexture("Billboard"));
 		glUniform1i(shader_ptr->getUniform("texture_in"), 0);
 
-		for (const shared_ptr<BaseModelSpirit>& base_ptr : spirits) {
+		for (const shared_ptr<BaseModelSpirit>& base_ptr : gl_obj->getSpirits()) {
 			glUniform3fv(shader_ptr->getUniform("billboard_pos"), 1, &(base_ptr->spirit().getPos()[0]));
 			glUniform2f(shader_ptr->getUniform("billboard_size"), base_ptr->spirit().getSize()[0], base_ptr->spirit().getSize()[1]);
 

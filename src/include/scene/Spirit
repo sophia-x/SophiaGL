@@ -50,7 +50,7 @@ public:
 	}
 
 	virtual void update(float delta) {
-		if (!immortal && life > 0)
+		if (alive())
 			life -= delta;
 	}
 
@@ -81,6 +81,31 @@ protected:
 
 	float life;
 	bool immortal;
+};
+
+class ParticleSpirit: public Spirit {
+public:
+	static shared_ptr<ParticleSpirit> getMortalSpirit(float p_life, const vec3& p_pos = vec3(), const vec3& p_speed = vec3(),
+	        const vec3& p_acc = vec3(), const quat& p_orig = quat(), const vec3& p_size = vec3(1))
+	{
+		return shared_ptr<ParticleSpirit>(new ParticleSpirit(p_pos, p_orig, p_size, p_life, false, p_speed, p_acc));
+	}
+
+	virtual void update(float delta) {
+		Spirit::update(delta);
+
+		if (alive()) {
+			speed += acc * delta;
+			position += speed * delta;
+		}
+	}
+
+protected:
+	ParticleSpirit(const vec3& p_pos, const quat& p_orig, const vec3& p_size, float p_life, bool p_immortal,
+	               const vec3& p_speed, const vec3& p_acc): Spirit{p_pos, p_orig, p_size, p_life, p_immortal}, speed{p_speed}, acc{p_acc} {}
+
+protected:
+	vec3 speed, acc;
 };
 
 }

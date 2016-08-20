@@ -40,7 +40,9 @@ int main() {
 	// pick_by_bullet_demo();
 	// pick_by_udf_demo();
 	// pick_by_color_demo();
-	billboard_demo();
+	// billboard_demo();
+	// particle_demo();
+	shadow_map_demo();
 
 	return 0;
 }

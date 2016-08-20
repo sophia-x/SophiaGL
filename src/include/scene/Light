@@ -6,6 +6,8 @@ using namespace std;
 
 #include <gl_objs/GLHeader>
 
+#include <debug>
+
 #include "Spirit"
 
 namespace gl
@@ -22,11 +24,38 @@ public:
 		return color;
 	}
 
-	virtual void setUniforms(const vector<GLuint>& ids) const = 0;
+	virtual void setUniforms(const shared_ptr<GLShader>& shader_ptr) const = 0;
 
 protected:
 	vec3 color;
 	float power;
+};
+
+class DirectionLight: public Light {
+public:
+	DirectionLight(const vec3 &p_direction, const vec3 &p_color, float p_power, const vec3& p_low = vec3(-10),
+	               const vec3& p_high = vec3(10, 10, 20), float p_life = 0, bool p_immoral = true):
+		Light{p_color, p_power, vec3(), Quat::rotationBetweenVectors(Quat::Z, p_direction), vec3(1), p_life, p_immoral},
+		low{p_low}, high{p_high}, len{length(p_direction)} {}
+
+	virtual mat4 getMVP() const {
+		mat4 depth_projection_matrix = ortho<float>(low.x, high.x, low.y, high.y, low.z, high.z);
+		mat4 depth_view_matrix = lookAt(len * (origentation * Quat::Z), vec3(0), Quat::Y);
+
+		return depth_projection_matrix * depth_view_matrix;
+	}
+
+	virtual void setUniforms(const shared_ptr<GLShader>& shader_ptr) const {
+		vec3 dir = origentation * Quat::Z;
+
+		glUniform3f(shader_ptr->getUniform("light_direction_worldspace"), dir.x, dir.y, dir.z);
+		glUniform3f(shader_ptr->getUniform("light_color"), color.x, color.y, color.z);
+		glUniform1f(shader_ptr->getUniform("light_power"), power);
+	}
+
+protected:
+	vec3 low, high;
+	float len;
 };
 
 class PointLight: public Light {
@@ -34,13 +63,12 @@ public:
 	PointLight(const vec3 &p_position, const vec3 &p_color, float p_power, float p_life = 0, bool p_immoral = true):
 		Light{p_color, p_power, p_position, quat(), vec3(1), p_life, p_immoral} {}
 
-	void setUniforms(const vector<GLuint>& ids) const {
-		glUniform3f(ids[0], position.x, position.y, position.z);
-		glUniform3f(ids[1], color.x, color.y, color.z);
-		glUniform1f(ids[2], power);
+	virtual void setUniforms(const shared_ptr<GLShader>& shader_ptr) const {
+		glUniform3f(shader_ptr->getUniform("light_position_worldspace"), position.x, position.y, position.z);
+		glUniform3f(shader_ptr->getUniform("light_color"), color.x, color.y, color.z);
+		glUniform1f(shader_ptr->getUniform("light_power"), power);
 	}
 };
-
 
 }
 

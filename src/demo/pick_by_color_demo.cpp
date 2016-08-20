@@ -44,9 +44,9 @@ void pick_by_color_demo() {
 	setTwUI();
 
 	// Create Standard Scene
-	shared_ptr<Scene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(4), vec3(1), 50.0f));
+	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(4), vec3(1), 50.0f));
 	// Create Standard Model
-	shared_ptr<Model> model_ptr = StandardModel::getModel("models/monkey.obj", vector<pair<string, string>> {
+	shared_ptr<StandardModel> model_ptr = StandardModel::getModel("models/monkey.obj", vector<pair<string, string>> {
 		make_pair(RGB, "textures/monkey.DDS")
 	});
 	// Create Material
@@ -72,7 +72,7 @@ void pick_by_color_demo() {
 		int g = (i & 0x0000FF00) >>  8;
 		int b = (i & 0x00FF0000) >> 16;
 
-		debug_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirits[i]->getSpiritPtr(), vec3(r / 255.0f, g / 255.0f, b / 255.0f)));
+		debug_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirits[i]->getSpiritPtr(), vec4(r / 255.0f, g / 255.0f, b / 255.0f, 1)));
 	}
 
 	Timer timer;

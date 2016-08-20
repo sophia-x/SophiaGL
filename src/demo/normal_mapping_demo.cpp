@@ -31,8 +31,8 @@ void normal_mapping_demo() {
 	Helper::opengl_init(BG_COLOR);
 
 	// Create Standard Scene
-	shared_ptr<Scene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(0, 0, 4), vec3(1), 50.0f),
-	                              "shaders/NormalMapping.vertexshader", "shaders/NormalMapping.fragmentshader",
+	shared_ptr<StandardScene> scene_ptr = StandardScene::getScene(vec4(0, 0, WIDTH, HEIGHT), PointLight(vec3(0, 0, 4), vec3(1), 50.0f),
+	                                      "shaders/NormalMapping.vertexshader", "shaders/NormalMapping.fragmentshader",
 	vector<string> {
 		"diffuse_texture",
 		"normal_texture",
@@ -52,7 +52,7 @@ void normal_mapping_demo() {
 	// Create Spirit
 	shared_ptr<Spirit> spirit = Spirit::getImmortalSpirit();
 	// Create Standard Model
-	shared_ptr<Model> model_ptr;
+	shared_ptr<NormalMappingModel> model_ptr;
 	{
 		model_ptr = NormalMappingModel::getModel("models/cylinder.obj", vector<pair<string, string>> {
 			make_pair("Diffuse", "textures/diffuse.DDS"),
@@ -73,13 +73,13 @@ void normal_mapping_demo() {
 
 	// Create DebugModel
 	shared_ptr<PassthroughMvpToolModel> normal_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES);
-	normal_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec3(1, 0, 0)));
+	normal_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec4(1, 0, 0, 1)));
 
 	shared_ptr<PassthroughMvpToolModel> tangent_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES);
-	tangent_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec3(0, 1, 0)));
+	tangent_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec4(0, 1, 0, 1)));
 
 	shared_ptr<PassthroughMvpToolModel> bitagent_ptr = PassthroughMvpToolModel::getTool(vec4(0, 0, WIDTH, HEIGHT), GL_LINES);
-	bitagent_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec3(0, 0, 1)));
+	bitagent_ptr->addSpirit(PassthroughMvpModelSpirit::getModelSpirit(spirit, vec4(0, 0, 1, 1)));
 
 	size_t vertices_size, normals_size, tangents_size, bitangents_size;
 	GLfloat* vertices = (GLfloat*)model_ptr->getData("Vertices", vertices_size);

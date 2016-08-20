@@ -10,6 +10,7 @@ using namespace std;
 using namespace glm;
 
 #include <gl_objs/GLHeader>
+#include <gl_objs/GLShader>
 
 namespace gl
 {
@@ -17,7 +18,7 @@ namespace gl
 class Material {
 public:
 	virtual ~Material() {}
-	virtual void setUniforms(const vector<GLuint>& ids) const = 0;
+	virtual void setUniforms(const shared_ptr<GLShader>& shader_ptr) const = 0;
 };
 
 class PhoneMaterial: public Material {
@@ -32,10 +33,10 @@ public:
 
 	PhoneMaterial() {}
 
-	virtual void setUniforms(const vector<GLuint>& ids) const {
-		glUniform3f(ids[0], ambient_color_ratio.x, ambient_color_ratio.y, ambient_color_ratio.z);
-		glUniform3f(ids[1], specular_color.x, specular_color.y, specular_color.z);
-		glUniform1f(ids[2], specular_ratio);
+	virtual void setUniforms(const shared_ptr<GLShader>& shader_ptr) const {
+		glUniform3f(shader_ptr->getUniform("material_ambient_color_ratio"), ambient_color_ratio.x, ambient_color_ratio.y, ambient_color_ratio.z);
+		glUniform3f(shader_ptr->getUniform("material_specular_color"), specular_color.x, specular_color.y, specular_color.z);
+		glUniform1f(shader_ptr->getUniform("material_specular_ratio"), specular_ratio);
 	}
 
 protected:

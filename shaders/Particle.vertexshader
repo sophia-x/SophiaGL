@@ -1,0 +1,27 @@
+#version 330 core
+
+layout(location = 0) in vec3 vertices;
+layout(location = 1) in vec4 xyzs; // Position of the center of the particule and size of the square
+layout(location = 2) in vec4 color; // Position of the center of the particule and size of the square
+
+out vec2 uv;
+out vec4 particle_color;
+
+uniform vec3 camera_right_worldspace;
+uniform vec3 camera_up_worldspace;
+uniform mat4 vp;
+
+void main() {
+	float particle_size = xyzs.w;
+	vec3 particle_center_wordspace = xyzs.xyz;
+	
+	vec3 vertex_position_worldspace = particle_center_wordspace + camera_right_worldspace * vertices.x * particle_size
+										+ camera_up_worldspace * vertices.y * particle_size;
+
+	// Output position of the vertex
+	gl_Position = vp * vec4(vertex_position_worldspace, 1.0f);
+
+	// uv of the vertex.
+	uv = vertices.xy + vec2(0.5, 0.5);
+	particle_color = color;
+}

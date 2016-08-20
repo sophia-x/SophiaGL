@@ -70,6 +70,8 @@ public:
 	};
 
 	virtual void bufferData() const {
+		if (buffer_data.empty())
+			return;
 		glBindBuffer(GL_ARRAY_BUFFER, buffer);
 		glBufferData(GL_ARRAY_BUFFER, buffer_data.size()*sizeof(T), &buffer_data[0], usage);
 	}
@@ -171,7 +173,7 @@ template <class T>
 class GLStreamBufferObj: public GLArrayBufferObj<T> {
 public:
 	static shared_ptr<GLBuffer> getGLBuffer(void *data, size_t size, GLint p_vertex_size, GLenum p_usage = GL_STREAM_DRAW, GLuint p_divisor = 1,
-	                                        size_t p_max_size = 100000, const GLintptr& p_offset = 0, const size_t& p_start = 0, GLenum p_type
+	                                        size_t p_max_size = 100000, GLintptr p_offset = 0, size_t p_start = 0, GLenum p_type
 	                                        = GL_FLOAT, GLboolean p_normalized = GL_FALSE, GLsizei p_stride = 0, const GLvoid* p_pointer = 0)
 	{
 		return shared_ptr<GLBuffer>(new GLStreamBufferObj(p_max_size, p_offset, p_start, p_vertex_size, p_type, p_normalized, p_stride,
@@ -179,7 +181,7 @@ public:
 	}
 
 	static shared_ptr<GLBuffer> getGLBuffer(GLint p_vertex_size, GLenum p_usage = GL_STREAM_DRAW, GLuint p_divisor = 1,
-	                                        size_t p_max_size = 100000, const GLintptr& p_offset = 0, const size_t& p_start = 0, GLenum p_type
+	                                        size_t p_max_size = 100000, GLintptr p_offset = 0, size_t p_start = 0, GLenum p_type
 	                                        = GL_FLOAT, GLboolean p_normalized = GL_FALSE, GLsizei p_stride = 0, const GLvoid* p_pointer = 0)
 	{
 		return shared_ptr<GLBuffer>(new GLStreamBufferObj(p_max_size, p_offset, p_start, p_vertex_size, p_type, p_normalized,
@@ -187,8 +189,8 @@ public:
 	}
 
 	static shared_ptr<GLBuffer> getGLBuffer(vector<T>& p_buffer_data, GLint p_vertex_size, GLenum p_usage = GL_STREAM_DRAW,
-	                                        GLuint p_divisor = 1, size_t p_max_size = 100000, const GLintptr& p_offset = 0,
-	                                        const size_t& p_start = 0, GLenum p_type = GL_FLOAT, GLboolean p_normalized = GL_FALSE,
+	                                        GLuint p_divisor = 1, size_t p_max_size = 100000, GLintptr p_offset = 0,
+	                                        size_t p_start = 0, GLenum p_type = GL_FLOAT, GLboolean p_normalized = GL_FALSE,
 	                                        GLsizei p_stride = 0, const GLvoid* p_pointer = 0)
 	{
 		return shared_ptr<GLBuffer>(new GLStreamBufferObj(p_max_size, p_offset, p_start, p_vertex_size, p_type, p_normalized, p_stride,
@@ -198,6 +200,8 @@ public:
 	virtual ~GLStreamBufferObj() {}
 
 	virtual void bufferData() const {
+		if (this->buffer_data.empty())
+			return;
 		glBindBuffer(GL_ARRAY_BUFFER, this->buffer);
 		glBufferData(GL_ARRAY_BUFFER, MAX_SIZE * sizeof(T)*this->vertex_size, NULL, this->usage);
 		glBufferSubData(GL_ARRAY_BUFFER, offset, this->buffer_data.size()*sizeof(T), &(this->buffer_data[start]));
@@ -209,25 +213,21 @@ protected:
 		GLArrayBufferObj<T>{p_vertex_size, p_type, p_normalized, p_stride, p_pointer, p_usage, p_divisor},
 	MAX_SIZE{p_max_size}, offset{p_offset}, start{p_start} {}
 
-	GLStreamBufferObj(size_t p_max_size, const GLintptr& p_offset, const size_t& p_start, GLint p_vertex_size, GLenum p_type,
-	                  GLboolean p_normalized, GLsizei p_stride, const GLvoid* p_pointer, vector<T>& p_buffer_data, GLenum p_usage,
-	                  GLuint p_divisor): GLArrayBufferObj<T> {
-		p_vertex_size, p_type, p_normalized, p_stride,
-		               p_pointer, p_buffer_data, p_usage, p_divisor
-	}, MAX_SIZE{p_max_size}, offset{p_offset}, start{p_start} {}
+	GLStreamBufferObj(size_t p_max_size, const GLintptr& p_offset, const size_t& p_start, GLint p_vertex_size, GLenum p_type, GLboolean
+	                  p_normalized, GLsizei p_stride, const GLvoid* p_pointer, vector<T>& p_buffer_data, GLenum p_usage, GLuint p_divisor):
+		GLArrayBufferObj<T> {p_vertex_size, p_type, p_normalized, p_stride, p_pointer, p_buffer_data, p_usage, p_divisor},
+	MAX_SIZE{p_max_size}, offset{p_offset}, start{p_start} {}
 
-	GLStreamBufferObj(size_t p_max_size, const GLintptr& p_offset, const size_t& p_start, GLint p_vertex_size, GLenum p_type,
-	                  GLboolean p_normalized, GLsizei p_stride, const GLvoid* p_pointer, void *data, size_t size, GLenum p_usage,
-	                  GLuint p_divisor): GLArrayBufferObj<T> {
-		p_vertex_size, p_type, p_normalized, p_stride, p_pointer, data, size,
-		               p_usage, p_divisor
-	}, MAX_SIZE{p_max_size}, offset{p_offset}, start{p_start} {}
+	GLStreamBufferObj(size_t p_max_size, const GLintptr& p_offset, const size_t& p_start, GLint p_vertex_size, GLenum p_type, GLboolean
+	                  p_normalized, GLsizei p_stride, const GLvoid* p_pointer, void *data, size_t size, GLenum p_usage, GLuint p_divisor):
+		GLArrayBufferObj<T> {p_vertex_size, p_type, p_normalized, p_stride, p_pointer, data, size, p_usage, p_divisor},
+	MAX_SIZE{p_max_size}, offset{p_offset}, start{p_start} {}
 
 protected:
 	const size_t MAX_SIZE;
 
-	const GLintptr& offset;
-	const size_t& start;
+	GLintptr offset;
+	size_t start;
 
 private:
 	GLStreamBufferObj(const GLStreamBufferObj& obj);

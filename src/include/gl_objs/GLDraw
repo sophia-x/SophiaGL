@@ -5,7 +5,7 @@
 
 #include "GLBuffer"
 
-namespace gl{
+namespace gl {
 
 class GLDraw {
 public:
@@ -23,8 +23,8 @@ protected:
 
 class GLArrayDraw: public GLDraw {
 public:
-	static shared_ptr<GLDraw> getDrawObj(const GLBuffer& p_buffer, GLenum p_mode) {
-		return shared_ptr<GLDraw>(new GLArrayDraw(p_buffer, p_mode));
+	static shared_ptr<GLArrayDraw> getDrawObj(const GLBuffer& p_buffer, GLenum p_mode) {
+		return shared_ptr<GLArrayDraw>(new GLArrayDraw(p_buffer, p_mode));
 	}
 
 	virtual ~GLArrayDraw() {}
@@ -39,27 +39,31 @@ protected:
 
 class GLInstanceDraw: public GLDraw {
 public:
-	static shared_ptr<GLDraw> getDrawObj(const GLBuffer& p_buffer, GLenum p_mode, const size_t& p_count) {
-		return shared_ptr<GLDraw>(new GLInstanceDraw(p_buffer, p_mode, p_count));
+	static shared_ptr<GLInstanceDraw> getDrawObj(const GLBuffer& p_buffer, GLenum p_mode, const size_t p_count = 0) {
+		return shared_ptr<GLInstanceDraw>(new GLInstanceDraw(p_buffer, p_mode, p_count));
 	}
 
 	virtual ~GLInstanceDraw() {}
+
+	virtual void setCount(size_t p_count) {
+		prim_count = p_count;
+	}
 
 	virtual void draw(GLuint first, GLsizei dis2end) const {
 		glDrawArraysInstanced(mode, first, buffer.size() - dis2end, prim_count);
 	}
 
 protected:
-	GLInstanceDraw(const GLBuffer& p_buffer, GLenum p_mode, const size_t& p_count): GLDraw{p_buffer, p_mode}, prim_count{p_count} {}
+	GLInstanceDraw(const GLBuffer& p_buffer, GLenum p_mode, const size_t p_count): GLDraw{p_buffer, p_mode}, prim_count{p_count} {}
 
 protected:
-	const size_t& prim_count;
+	size_t prim_count;
 };
 
 class GLElementDraw: public GLDraw {
 public:
-	static shared_ptr<GLDraw> getDrawObj(const GLBuffer& p_buffer, GLenum p_mode, GLenum p_type = GL_UNSIGNED_SHORT) {
-		return shared_ptr<GLDraw>(new GLElementDraw(p_buffer, p_mode, p_type));
+	static shared_ptr<GLElementDraw> getDrawObj(const GLBuffer& p_buffer, GLenum p_mode, GLenum p_type = GL_UNSIGNED_SHORT) {
+		return shared_ptr<GLElementDraw>(new GLElementDraw(p_buffer, p_mode, p_type));
 	}
 
 	virtual ~GLElementDraw() {}

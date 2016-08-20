@@ -66,8 +66,8 @@ private:
 
 class GLDepthFrame: public GLFrame {
 public:
-	static shared_ptr<GLFrame> getFrame(vec2 size) {
-		shared_ptr<GLFrame> ptr(new GLDepthFrame());
+	static shared_ptr<GLDepthFrame> getFrame(vec2 size) {
+		shared_ptr<GLDepthFrame> ptr(new GLDepthFrame());
 		ptr->init(size);
 		return ptr;
 	}

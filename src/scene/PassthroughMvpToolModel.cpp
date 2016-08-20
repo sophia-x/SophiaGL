@@ -40,13 +40,12 @@ void PassthroughMvpToolModel::draw() {
 		const mat4 &projection_matrix = camera.getProjectionMatrix();
 		const mat4 &view_matrix = camera.getViewMatrix();
 
-		for (const shared_ptr<BaseModelSpirit>& base_ptr : spirits) {
+		for (const shared_ptr<BaseModelSpirit>& base_ptr : gl_obj->getSpirits()) {
+			base_ptr->setupUniforms(shader_ptr);
+
 			const mat4 &model_matrix = base_ptr->spirit().getModelMatrix();
 			mat4 MVP = projection_matrix * view_matrix * model_matrix;
 			glUniformMatrix4fv(shader_ptr->getUniform("MVP"), 1, GL_FALSE, &MVP[0][0]);
-
-			const shared_ptr<PassthroughMvpModelSpirit>& ptr = (const shared_ptr<PassthroughMvpModelSpirit>&)base_ptr;
-			glUniform3fv(shader_ptr->getUniform("COLOR"), 1, &(ptr->getColor()[0]));
 
 			gl_obj->draw(draw_vec, draw_obj);
 		}
