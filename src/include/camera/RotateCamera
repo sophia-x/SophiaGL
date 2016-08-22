@@ -1,9 +1,9 @@
 #ifndef ROTATE_CAMERA_H
 #define ROTATE_CAMERA_H
 
-#include <tools/callback_helper>
-
 #include <debug>
+
+#include <tools/callback_helper>
 
 #include "Camera"
 
@@ -12,15 +12,15 @@ namespace  gl
 
 class RotateCamera: public Camera {
 public:
-	static shared_ptr<Camera> getCamera(vec3 p_pos, float p_rotate_speed, float p_move_speed, float p_fov_speed, vec3 p_up = Quat::Y,
-	                                    vec3 p_origin = vec3(0), float p_fov = 45.0f, float p_ratio = 4.0f / 3.0f,
-	                                    float p_near = 0.1f, float p_far = 100.f)
+	static shared_ptr<Camera> getCamera(vec3 p_pos, float p_rotate_speed, float p_move_speed, float p_fov_speed,
+	                                    vec3 p_up = Quat::Y, vec3 p_origin = vec3(0), float p_fov = 45.0f,
+	                                    float p_ratio = 4.0f / 3.0f, float p_near = 0.1f, float p_far = 100.f)
 	{
-		return shared_ptr<Camera>(new RotateCamera(p_pos, p_origin, p_up, p_rotate_speed, p_move_speed, p_fov_speed, p_fov,
-		                          p_ratio, p_near, p_far));
+		return shared_ptr<Camera>(new RotateCamera(p_pos, p_origin, p_up, p_rotate_speed, p_move_speed,
+		                          p_fov_speed, p_fov, p_ratio, p_near, p_far));
 	}
 
-	virtual void init() {
+	virtual void useCamera() {
 		window = glfwGetCurrentContext();
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		glfwSetScrollCallback(window, CallBackHelper::scrollCallBack);

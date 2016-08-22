@@ -41,7 +41,7 @@ public:
 	}
 
 	void pushCamera(const shared_ptr<Camera>& camera_ptr) {
-		camera_ptr->init();
+		camera_ptr->useCamera();
 		cameras.push(camera_ptr);
 	}
 
@@ -51,7 +51,7 @@ public:
 		cameras.pop();
 
 		if (!cameras.empty())
-			cameras.top()->init();
+			cameras.top()->useCamera();
 	}
 
 	const shared_ptr<Camera>& currentCamera() {

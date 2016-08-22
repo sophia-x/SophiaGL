@@ -1,4 +1,4 @@
-#include <camera/Camera>
+#include <camera/StaticCamera>
 
 #include <scene/Scene>
 #include <scene/WindowManager>

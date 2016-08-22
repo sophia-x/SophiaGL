@@ -1,6 +1,3 @@
-// #include <camera/Camera>
-// #include <camera/RotateCamera>
-
 // #include <scene/Material>
 // #include <scene/Model>
 // #include <scene/Scene>
