@@ -1,13 +1,13 @@
 #ifndef GL_OBJ_H
 #define GL_OBJ_H
 
+#include <debug>
+
 #include <unordered_map>
 #include <string>
 using namespace std;
 
 #include <tools/texture_loader>
-
-#include <debug>
 
 #include "GLBuffer"
 #include "GLDraw"
@@ -34,24 +34,16 @@ public:
 		buffers[key] = p_buffer;
 	}
 
+	void addDrawObj(const string& key, const shared_ptr<GLDraw>& draw_obj) {
+		draw_objs[key] = draw_obj;
+	}
+
 	void addTexture(const string& key, const string& path) {
 		textures[key] = TextureLoader::loadTexture(path);
 	}
 
 	void addTexture(const string& key, GLuint texture) {
 		textures[key] = texture;
-	}
-
-	void addDrawObj(const string& key, const shared_ptr<GLDraw>& draw_obj) {
-		draw_objs[key] = draw_obj;
-	}
-
-	const shared_ptr<GLDraw>& getDrawObj(const string& key) const {
-		return draw_objs.at(key);
-	}
-
-	GLuint getTexture(const string& key) const {
-		return textures.at(key);
 	}
 
 	const GLBuffer& getBuffer(const string& key) const {
@@ -76,6 +68,14 @@ public:
 		return buffers.at(key)->getData(length);
 	};
 
+	const shared_ptr<GLDraw>& getDrawObj(const string& key) const {
+		return draw_objs.at(key);
+	}
+
+	GLuint getTexture(const string& key) const {
+		return textures.at(key);
+	}
+
 	void draw(const vector<string>& keys, const string& draw_key, GLuint first = 0, GLsizei dis2end = 0) {
 		glBindVertexArray(vertex_array_ID);
 
@@ -95,8 +95,8 @@ public:
 private:
 	GLuint vertex_array_ID;
 	unordered_map<string, shared_ptr<GLBuffer> > buffers;
-	unordered_map<string, GLuint> textures;
 	unordered_map<string, shared_ptr<GLDraw>> draw_objs;
+	unordered_map<string, GLuint> textures;
 
 private:
 	GLObj() {

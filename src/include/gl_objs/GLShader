@@ -1,13 +1,13 @@
 #ifndef GL_SHADER_H
 #define GL_SHADER_H
 
+#include <debug>
+
 #include <vector>
 #include <unordered_map>
 using namespace std;
 
 #include <tools/shader_loader>
-
-#include <debug>
 
 namespace gl
 {
@@ -26,12 +26,12 @@ public:
 		glUseProgram(program_ID);
 	}
 
-	GLuint getUniform(const string &key) const {
-		return uniforms.at(key);
-	}
-
 	void unuseShader() const {
 		glUseProgram(0);
+	}
+
+	GLuint getUniform(const string &key) const {
+		return uniforms.at(key);
 	}
 
 private:
