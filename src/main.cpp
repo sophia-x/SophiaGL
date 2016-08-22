@@ -1,14 +1,12 @@
-#include <tools/Timer>
-
-// #include <debug>
+#include <debug>
 
 #include <demo>
 
 int main() {
 
-// #ifdef DEBUG
-// 	cout << "DEBUG" << endl;
-// #endif
+#ifdef DEBUG
+	cout << "DEBUG" << endl;
+#endif
 
 	// standard_demo();
 	// rotation_demo();
@@ -19,7 +17,7 @@ int main() {
 	// pick_by_bullet_demo();
 	// pick_by_udf_demo();
 	// pick_by_color_demo();
-	// wood_demo();
+	wood_demo();
 
 	return 0;
 }
