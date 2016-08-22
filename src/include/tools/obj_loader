@@ -1,6 +1,8 @@
 #ifndef OBJ_LOADER_H
 #define OBJ_LOADER_H
 
+#include <debug>
+
 #include <vector>
 using namespace std;
 

@@ -1,12 +1,12 @@
 #ifndef SHADER_LOADER_H
 #define SHADER_LOADER_H
 
+#include <debug>
+
 #include <string>
 using namespace std;
 
 #include <gl_objs/GLHeader>
-
-#include <debug>
 
 namespace ShaderLoader
 {

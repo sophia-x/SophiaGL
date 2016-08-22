@@ -1,12 +1,16 @@
 #ifndef CALL_BACK_HELPER_H
 #define CALL_BACK_HELPER_H
 
+#include <debug>
+
 #include <gl_objs/GLHeader>
 
 namespace CallBackHelper {
 
 void scrollCallBack(GLFWwindow * window, double x, double y);
+
 void regist(unsigned long key);
+
 double getScrollX();
 double getScrollY();
 const GLFWwindow* getWindow();

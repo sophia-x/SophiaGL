@@ -1,9 +1,4 @@
-// #include <tools/callback_helper>
-// #include <tools/obj_loader>
-// #include <tools/quaternion>
-// #include <tools/shader_loader>
-// #include <tools/texture_loader>
-// #include <tools/Timer>
+#include <tools/Timer>
 
 // #include <debug>
 

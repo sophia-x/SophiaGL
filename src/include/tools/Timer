@@ -1,6 +1,8 @@
 #ifndef TIMER_H
 #define TIMER_H
 
+#include <debug>
+
 #include <stdio.h>
 
 #include <gl_objs/GLHeader>

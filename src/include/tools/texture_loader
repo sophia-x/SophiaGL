@@ -1,6 +1,8 @@
 #ifndef TEXTURE_LOADER
 #define TEXTURE_LOADER
 
+#include <debug>
+
 #include <gl_objs/GLHeader>
 
 #include <string>
