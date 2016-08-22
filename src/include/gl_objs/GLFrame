@@ -21,10 +21,6 @@ public:
 		glDeleteTextures(1, &buffer_texture);
 	}
 
-	virtual GLuint getTexture(size_t type) const {
-		return buffer_texture;
-	}
-
 	virtual void useFrameBuffer() const {
 		glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 	}
@@ -50,10 +46,12 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	virtual void setUpTexture(vec2 size) = 0;
+	virtual GLuint getTexture(size_t type) const = 0;
 
 protected:
 	GLFrame() {}
+
+	virtual void setUpTexture(vec2 size) = 0;
 
 protected:
 	GLuint frame_buffer;
@@ -74,6 +72,13 @@ public:
 
 	virtual ~GLDepthFrame() {}
 
+	virtual GLuint getTexture(size_t type) const {
+		return buffer_texture;
+	}
+
+protected:
+	GLDepthFrame() {}
+
 	virtual void setUpTexture(vec2 size) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, size[0], size[1], 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -85,9 +90,6 @@ public:
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, buffer_texture, 0);
 		glDrawBuffer(GL_NONE);
 	}
-
-protected:
-	GLDepthFrame() {}
 
 private:
 	GLDepthFrame(const GLDepthFrame& obj);
@@ -106,6 +108,13 @@ public:
 		glDeleteRenderbuffers(1, &depth_buffer);
 	}
 
+	virtual GLuint getTexture(size_t type) const {
+		return buffer_texture;
+	}
+
+protected:
+	GLTextureFrame() {}
+
 	virtual void setUpTexture(vec2 size) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -122,9 +131,6 @@ public:
 		GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
 		glDrawBuffers(1, DrawBuffers);
 	}
-
-protected:
-	GLTextureFrame() {}
 
 protected:
 	GLuint depth_buffer;

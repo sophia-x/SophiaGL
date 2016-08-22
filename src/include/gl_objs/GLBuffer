@@ -70,9 +70,7 @@ public:
 			return &buffer_data[0];
 	};
 
-	virtual size_t element_num() const {
-		return buffer_data.size();
-	}
+	virtual size_t element_num() const = 0;
 
 	virtual void unbind(GLuint index) const = 0;
 
@@ -262,6 +260,10 @@ public:
 	}
 
 	virtual void unbind(GLuint index) const {}
+
+	virtual size_t element_num() const {
+		return this->buffer_data.size();
+	}
 
 protected:
 	GLElementBufferObj(GLenum p_usage): GLBufferObj<T> {p_usage} {}
