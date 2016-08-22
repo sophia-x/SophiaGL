@@ -1,6 +1,8 @@
 #ifndef GL_HEADER
 #define GL_HEADER
 
+#include <debug>
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
