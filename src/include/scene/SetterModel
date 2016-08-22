@@ -1,0 +1,60 @@
+#ifndef SETTER_MODEL
+#define SETTER_MODEL
+
+#include <debug>
+
+#include "Model"
+
+namespace gl
+{
+
+class SetterModel: public Model {
+public:
+	static shared_ptr<SetterModel> initModel(const shared_ptr<GLObj>& p_obj) {
+		return shared_ptr<SetterModel>(new SetterModel(p_obj));
+	}
+
+	shared_ptr<SetterModel> getInstance()
+	{
+		return shared_ptr<SetterModel>(new SetterModel(gl_obj));
+	}
+
+	shared_ptr<SetterModel> setInstanceShader(const shared_ptr<GLShader>& p_shader) {
+		shader_ptr = p_shader;
+		return shared_ptr<SetterModel>(this);
+	}
+
+	shared_ptr<SetterModel> setInstanceDrawVec(const vector<string>& p_draw_vec) {
+		draw_vec = p_draw_vec;
+		return shared_ptr<SetterModel>(this);
+	}
+
+	shared_ptr<SetterModel> setInstanceDrawObj(const string& p_draw_obj) {
+		draw_obj = p_draw_obj;
+		return shared_ptr<SetterModel>(this);
+	}
+
+	shared_ptr<SetterModel> setInstanceSpirit(const shared_ptr<Spirit>& p_spirit) {
+		spirit = p_spirit;
+		return shared_ptr<SetterModel>(this);
+	}
+
+	shared_ptr<SetterModel> setInstanceSetter(const shared_ptr<Setter>& p_setter) {
+		setter = p_setter;
+		return shared_ptr<SetterModel>(this);
+	}
+
+	virtual void draw() const {
+		shader_ptr->useShader(); {
+			setter->setup();
+			gl_obj->draw(draw_vec, draw_obj);
+		} shader_ptr->unuseShader();
+	}
+
+protected:
+	SetterModel(const shared_ptr<GLObj>& p_obj): Model{p_obj} {}
+};
+
+}
+
+#endif

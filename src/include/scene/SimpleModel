@@ -1,0 +1,242 @@
+#ifndef SIMPLE_MODEL_H
+#define SIMPLE_MODEL_H
+
+#include <debug>
+
+#include "Model"
+
+namespace gl
+{
+
+class ToolModel: public Model {
+public:
+	virtual ~ToolModel() {}
+
+protected:
+	ToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, const vector<string>& p_draw_vec,
+	          const string& p_draw_obj, const shared_ptr<Setter>& p_setter_ptr): Model{p_obj, p_shader, p_draw_vec, p_draw_obj, p_setter_ptr},
+		border{p_border} {}
+	ToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const shared_ptr<Spirit>& p_spirit, const vec4& p_border,
+	          const vector<string>& p_draw_vec, const string& p_draw_obj, const shared_ptr<Setter>& p_setter_ptr): Model{p_obj, p_shader,
+		                  p_spirit, p_draw_vec, p_draw_obj, p_setter_ptr}, border{p_border} {}
+protected:
+	vec4 border;
+};
+
+class TextToolModel: public ToolModel {
+public:
+	static shared_ptr<TextToolModel> initTool(const vec4& p_border, const vec2& p_size, const string& texture_path = "textures/Holstein.DDS",
+	        const string &vertex_path = "shaders/TextVertexShader.vertexshader",
+	        const string &fragment_path = "shaders/TextVertexShader.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"half_width",
+		"half_height",
+		"texture_in"
+	});
+
+	virtual ~TextToolModel() {}
+
+	virtual void print_text(const string& text, int x, int y, int size);
+
+	virtual void flush() {
+		if (change) {
+			gl_obj->bufferData(vector<string> {"Vertices", "Uvs"});
+			change = false;
+		}
+	}
+
+	virtual void clear() {
+		gl_obj->setData("Vertices", 0, 0);
+		gl_obj->setData("Uvs", 0, 0);
+
+		change = true;
+	}
+
+	virtual void draw() const;
+
+protected:
+	TextToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, const vec2& p_size,
+	              const vector<string>& p_draw_vec, const string& p_draw_obj):
+		ToolModel{p_obj, p_shader, p_border, p_draw_vec, p_draw_obj, Setter::getSetter()}, size{p_size}, change{false} {}
+
+private:
+	vec2 size;
+	bool change;
+};
+
+class PassthroughMvpToolModel: public ToolModel {
+public:
+	static shared_ptr<PassthroughMvpToolModel> initTool(const vec4& p_border, GLenum p_mode, const vec4& p_color, bool use_index = false,
+	        const string &vertex_path = "shaders/PassthroughMVP.vertexshader",
+	        const string &fragment_path = "shaders/PassthroughMVP.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"COLOR",
+		"MVP"
+	});
+
+	virtual shared_ptr<PassthroughMvpToolModel> getInstance(const shared_ptr<Spirit>& p_spirit) const {
+		return shared_ptr<PassthroughMvpToolModel>(new PassthroughMvpToolModel(gl_obj, shader_ptr, border, mode,
+		        color, p_spirit, draw_vec, draw_obj, setter));
+	}
+
+	virtual ~PassthroughMvpToolModel() {}
+
+	virtual void setColor(const vec4& p_color) {
+		color = p_color;
+	}
+
+	virtual void draw() const;
+
+protected:
+	PassthroughMvpToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, GLenum p_mode,
+	                        const vec4& p_color, const vector<string>& p_draw_vec, const string& p_draw_obj):
+		ToolModel{p_obj, p_shader, p_border, p_draw_vec, p_draw_obj, Setter::getSetter()}, mode{p_mode}, color{p_color} {}
+
+	PassthroughMvpToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, GLenum p_mode, const
+	                        vec4& p_color, const shared_ptr<Spirit>& p_spirit , const vector<string>& p_draw_vec, const string& p_draw_obj,
+	                        const shared_ptr<Setter>& p_setter_ptr): ToolModel{p_obj, p_shader, p_spirit,
+		                                p_border, p_draw_vec, p_draw_obj, p_setter_ptr}, mode{p_mode}, color{p_color} {}
+
+private:
+	GLenum mode;
+
+	vec4 color;
+};
+
+class VertexColorToolModel: public ToolModel {
+public:
+	static shared_ptr<VertexColorToolModel> initTool(const vec4& p_border, GLenum p_mode,
+	        const string &vertex_path = "shaders/Transform.vertexshader",
+	        const string &fragment_path = "shaders/Color.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"MVP"
+	});
+
+	virtual shared_ptr<VertexColorToolModel> getInstance(const shared_ptr<Spirit>& p_spirit) const {
+		return shared_ptr<VertexColorToolModel>(new VertexColorToolModel(gl_obj, shader_ptr, border,
+		                                        mode, p_spirit, draw_vec, draw_obj, setter));
+	}
+
+	virtual ~VertexColorToolModel() {}
+
+	virtual void draw() const;
+
+protected:
+	VertexColorToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, GLenum p_mode,
+	                     const vector<string>& p_draw_vec, const string& p_draw_obj): ToolModel{p_obj, p_shader, p_border,
+		                             p_draw_vec, p_draw_obj, Setter::getSetter()}, mode{p_mode} {}
+	VertexColorToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, GLenum p_mode,
+	                     const shared_ptr<Spirit>& p_spirit, const vector<string>& p_draw_vec, const string& p_draw_obj,
+	                     const shared_ptr<Setter>& p_setter_ptr): ToolModel{p_obj, p_shader, p_spirit, p_border, p_draw_vec,
+		                             p_draw_obj, p_setter_ptr}, mode{p_mode} {}
+private:
+	GLenum mode;
+};
+
+class VertexTextureToolModel: public ToolModel {
+public:
+	static shared_ptr<VertexTextureToolModel> initTool(const vec4& p_border, GLenum p_mode, GLuint texture_id,
+	        const string &vertex_path = "shaders/Passthrough.vertexshader",
+	        const string &fragment_path = "shaders/Passthrough.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"texture_in",
+		"M"
+	});
+
+	virtual ~VertexTextureToolModel() {}
+
+	virtual shared_ptr<VertexTextureToolModel> getInstance(const shared_ptr<Spirit>& p_spirit) const {
+		return shared_ptr<VertexTextureToolModel>(new VertexTextureToolModel(gl_obj, shader_ptr, border, mode,
+		        p_spirit, draw_vec, draw_obj, setter));
+	}
+
+	virtual void draw() const;
+
+protected:
+	VertexTextureToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, GLenum p_mode,
+	                       const vector<string>& p_draw_vec, const string& p_draw_obj): ToolModel{p_obj, p_shader, p_border,
+		                               p_draw_vec, p_draw_obj, Setter::getSetter()}, mode{p_mode} {}
+	VertexTextureToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, GLenum p_mode,
+	                       const shared_ptr<Spirit>& p_spirit, const vector<string>& p_draw_vec, const string& p_draw_obj,
+	                       const shared_ptr<Setter>& p_setter_ptr): ToolModel{p_obj, p_shader, p_spirit, p_border, p_draw_vec, p_draw_obj,
+		                               p_setter_ptr}, mode{p_mode} {}
+
+private:
+	GLenum mode;
+};
+
+class BillboardToolModel: public ToolModel {
+public:
+	static shared_ptr<BillboardToolModel> initTool(const vec4& p_border, const vec4& p_board_border, const vec4& p_life_color, GLenum mode,
+	        const string& p_texture = "textures/billboard.DDS", const string &vertex_path = "shaders/Billboard_2D.vertexshader",
+	        const string &fragment_path = "shaders/Billboard.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"texture_in",
+		"border",
+		"life_color",
+		"camera_right_worldspace",
+		"camera_up_worldspace",
+		"VP",
+		"billboard_pos",
+		"billboard_size"
+	});
+
+	virtual ~BillboardToolModel() {}
+
+	virtual shared_ptr<BillboardToolModel> getInstance(const shared_ptr<Spirit>& p_spirit) const {
+		return shared_ptr<BillboardToolModel>(new BillboardToolModel(gl_obj, shader_ptr, border, board_border,
+		                                      life_color, p_spirit, draw_vec, draw_obj, setter));
+	}
+
+	virtual void draw() const;
+
+protected:
+	BillboardToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, const vec4& p_board_border,
+	                   const vec4& p_life_color, const vector<string>& p_draw_vec, const string& p_draw_obj):
+		ToolModel{p_obj, p_shader, p_border, p_draw_vec, p_draw_obj, Setter::getSetter()},
+		board_border{p_board_border}, life_color{p_life_color} {}
+	BillboardToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border, const vec4& p_board_border,
+	                   const vec4& p_life_color, const shared_ptr<Spirit>& p_spirit, const vector<string>& p_draw_vec, const string& p_draw_obj,
+	                   const shared_ptr<Setter>& p_setter_ptr): ToolModel{p_obj, p_shader, p_spirit, p_border, p_draw_vec, p_draw_obj,
+		                           p_setter_ptr}, board_border{p_board_border}, life_color{p_life_color} {}
+
+protected:
+	vec4 board_border;
+	vec4 life_color;
+};
+
+class ParticleToolModel: public ToolModel {
+public:
+	static shared_ptr<ParticleToolModel> initTool(const vec4& p_border, GLenum mode,
+	        const string& p_texture = "textures/Particle.DDS", const string &vertex_path = "shaders/Particle.vertexshader",
+	        const string &fragment_path = "shaders/Particle.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"texture_in",
+		"camera_right_worldspace",
+		"camera_up_worldspace",
+		"vp"
+	});
+
+	virtual ~ParticleToolModel() {}
+
+	virtual void addSpirit(const shared_ptr<ParticleSpirit>& spirit) {
+		spirits.push_back(spirit);
+	}
+
+	virtual void update(float delta);
+
+	virtual void draw() const;
+
+protected:
+	ParticleToolModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vec4& p_border,
+	                  const vector<string>& p_draw_vec, const string& p_draw_obj):
+		ToolModel{p_obj, p_shader, p_border, p_draw_vec, p_draw_obj, Setter::getSetter()} {}
+
+	virtual void sortByLife();
+
+protected:
+	vector<shared_ptr<ParticleSpirit>> spirits;
+};
+
+}
+#endif

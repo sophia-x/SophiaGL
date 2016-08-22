@@ -1,12 +1,3 @@
-// #include <scene/Material>
-// #include <scene/Model>
-// #include <scene/Scene>
-// #include <scene/Spirit>
-// #include <scene/Material>
-// #include <scene/Light>
-// #include <scene/WindowManager>
-// #include <scene/ModelSpirit>
-
 // #include <tools/callback_helper>
 // #include <tools/obj_loader>
 // #include <tools/quaternion>

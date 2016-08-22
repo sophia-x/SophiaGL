@@ -9,7 +9,6 @@ using namespace std;
 #include <glm/glm.hpp>
 using namespace glm;
 
-#include <gl_objs/GLHeader>
 #include <gl_objs/GLShader>
 
 namespace gl
@@ -24,14 +23,12 @@ public:
 class PhoneMaterial: public Material {
 public:
 	static void addMaterial(const string& key, const vec3& p_ambient_color_ratio, const vec3& p_specular_color, float p_specular_ratio) {
-		materials[key] = PhoneMaterial(p_ambient_color_ratio, p_specular_color, p_specular_ratio);
+		materials[key] = shared_ptr<PhoneMaterial>(new PhoneMaterial(p_ambient_color_ratio, p_specular_color, p_specular_ratio));
 	}
 
-	static const PhoneMaterial* getMaterial(const string& key) {
-		return &materials.at(key);
+	static const shared_ptr<PhoneMaterial>& getMaterial(const string& key) {
+		return materials.at(key);
 	}
-
-	PhoneMaterial() {}
 
 	virtual void setUniforms(const shared_ptr<GLShader>& shader_ptr) const {
 		glUniform3f(shader_ptr->getUniform("material_ambient_color_ratio"), ambient_color_ratio.x, ambient_color_ratio.y, ambient_color_ratio.z);
@@ -49,7 +46,7 @@ private:
 		ambient_color_ratio{p_ambient_color_ratio}, specular_color{p_specular_color}, specular_ratio{p_specular_ratio} {}
 
 private:
-	static unordered_map<string, PhoneMaterial> materials;
+	static unordered_map<string, shared_ptr<PhoneMaterial>> materials;
 };
 
 }

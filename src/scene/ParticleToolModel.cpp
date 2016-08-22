@@ -40,6 +40,8 @@ void ParticleToolModel::sortByLife() {
 }
 
 void ParticleToolModel::update(float delta) {
+	Model::update(delta);
+
 	sortByLife();
 
 	while (!spirits.empty() && !spirits[0]->alive()) {
@@ -77,7 +79,7 @@ void ParticleToolModel::update(float delta) {
 void ParticleToolModel::draw() const {
 	glViewport(border[0], border[1], border[2], border[3]);
 	shader_ptr->useShader();
-	{	
+	{
 		setter->setup();
 		const Camera& camera = *WindowManager::getWindowManager().currentCamera();
 		const mat4 &projection_matrix = camera.getProjectionMatrix();

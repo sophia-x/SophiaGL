@@ -12,6 +12,7 @@ using namespace std;
 #include <camera/Camera>
 
 #include "Scene"
+#include "SimpleModel"
 
 namespace gl
 {
@@ -80,7 +81,7 @@ public:
 		scenes[key] = scene;
 	}
 
-	const shared_ptr<Scene>& getScenes(const string& key) {
+	const shared_ptr<Scene>& getScene(const string& key) {
 		return scenes.at(key);
 	}
 

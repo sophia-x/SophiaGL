@@ -1,6 +1,8 @@
 #ifndef SPIRIT_H
 #define SPIRIT_H
 
+#include <debug>
+
 #include <memory>
 #include <vector>
 using namespace std;
@@ -24,7 +26,14 @@ public:
 	}
 
 	static shared_ptr<Spirit> getImmortalSpirit(const vec3& p_pos = vec3(), const quat& p_orig = quat(), const vec3& p_size = vec3(1)) {
-		return shared_ptr<Spirit>(new Spirit(p_pos, p_orig, p_size, 0, true));
+		shared_ptr<Spirit> ptr(new Spirit(p_pos, p_orig, p_size, 0, true));
+		spirits.push_back(ptr);
+		return ptr;
+	}
+
+	virtual void update(float delta) {
+		if (alive())
+			life -= delta;
 	}
 
 	static void update_all(float delta) {
@@ -55,11 +64,6 @@ public:
 
 	virtual const float& getLife() const {
 		return life;
-	}
-
-	virtual void update(float delta) {
-		if (alive())
-			life -= delta;
 	}
 
 	virtual bool alive() const {
@@ -104,10 +108,6 @@ public:
 		return ptr;
 	}
 
-	virtual const vec4& getColor() const {
-		return color;
-	}
-
 	virtual void update(float delta) {
 		Spirit::update(delta);
 
@@ -115,6 +115,10 @@ public:
 			speed += acc * delta;
 			position += speed * delta;
 		}
+	}
+	
+	virtual const vec4& getColor() const {
+		return color;
 	}
 
 protected:

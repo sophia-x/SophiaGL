@@ -1,6 +1,8 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#include <debug>
+
 #include <string>
 #include <unordered_map>
 using namespace std;
@@ -11,7 +13,7 @@ using namespace std;
 #include <tools/Listener>
 
 #include "Light"
-#include "Model"
+#include "StandardModel"
 
 namespace gl
 {
@@ -39,13 +41,7 @@ public:
 	virtual void draw() const {
 		glViewport(border[0], border[1], border[2], border[3]);
 		for (const shared_ptr<Model>& model_ptr : base_models) {
-			const shared_ptr<GLShader>& shader_ptr = model_ptr->getShaderPtr();
-
-			shader_ptr->useShader();
-			{
-				model_ptr->draw();
-			}
-			shader_ptr->unuseShader();
+			model_ptr->draw();
 		}
 	}
 
@@ -131,6 +127,24 @@ protected:
 protected:
 	PointLight light;
 	vector<shared_ptr<StandardModel>> models;
+};
+
+class ShadowMapModel: public Model {
+public:
+	static shared_ptr<ShadowMapModel> getModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader,
+	        const shared_ptr<Spirit>& p_spirit) {
+		return shared_ptr<ShadowMapModel>(new ShadowMapModel(p_obj, p_shader, p_spirit, vector<string> {"Vertices", "Indices"}, "Element"));
+	}
+
+	virtual void draw() const {
+		glUniformMatrix4fv(shader_ptr->getUniform("M"), 1, GL_FALSE, &(spirit->getModelMatrix()[0][0]));
+		gl_obj->draw(draw_vec, draw_obj);
+	}
+
+protected:
+	ShadowMapModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const shared_ptr<Spirit>& p_spirit, const
+	               vector<string>& p_draw_vec, const string& p_draw_obj): Model{p_obj, p_shader,
+		                       p_spirit, p_draw_vec, p_draw_obj, Setter::getSetter()} {}
 };
 
 class ShadowMapScene: public Scene {

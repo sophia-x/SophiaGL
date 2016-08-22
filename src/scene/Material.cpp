@@ -3,6 +3,6 @@
 namespace gl
 {
 
-unordered_map<string, PhoneMaterial> PhoneMaterial::materials;
+unordered_map<string, shared_ptr<PhoneMaterial>> PhoneMaterial::materials;
 
 }

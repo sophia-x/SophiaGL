@@ -1,0 +1,60 @@
+#ifndef SETTER_H
+#define SETTER_H
+
+#include <debug>
+
+#include <memory>
+using namespace std;
+
+#include <gl_objs/GLHeader>
+
+namespace gl
+{
+
+class Setter {
+public:
+	static const shared_ptr<Setter> getSetter() {
+		return shared_ptr<Setter>(new Setter());
+	}
+
+	virtual void update(float delta) {}
+
+	virtual void setup() const {}
+
+protected:
+	Setter() {}
+	Setter(const shared_ptr<Setter>& p_setter_ptr): setter_ptr{p_setter_ptr} {}
+
+	shared_ptr<Setter> setter_ptr;
+};
+
+class TimeSetter: public Setter {
+public:
+	static shared_ptr<TimeSetter> getSetter(const shared_ptr<Setter>& p_setter_ptr, GLuint p_time_id) {
+		return shared_ptr<TimeSetter>(new TimeSetter(p_setter_ptr, p_time_id));
+	}
+
+	static shared_ptr<TimeSetter> getSetter(GLuint p_time_id) {
+		return shared_ptr<TimeSetter>(new TimeSetter(p_time_id));
+	}
+
+	virtual void update(float delta) {
+		setter_ptr->update(delta);
+	}
+
+	virtual void setup() const {
+		glUniform1f(time_id, glfwGetTime());
+		setter_ptr->setup();
+	}
+
+protected:
+	TimeSetter(const shared_ptr<Setter>& p_setter_ptr, GLuint p_time_id): Setter{p_setter_ptr}, time_id{p_time_id} {}
+
+	TimeSetter(GLuint p_time_id): Setter{Setter::getSetter()}, time_id{p_time_id} {}
+
+	GLuint time_id;
+};
+
+}
+
+#endif

@@ -1,0 +1,92 @@
+#ifndef STANDARD_MODEL_H
+#define STANDARD_MODEL_H
+
+#include <debug>
+
+#include "Model"
+#include "Material"
+
+namespace gl
+{
+
+class StandardModel: public Model {
+public:
+	static shared_ptr<StandardModel> initModel(const string & obj_path, const vector<pair<string, string>> & p_textures,
+	        const string & vertex_path = "shaders/StandardShading.vertexshader",
+	        const string & fragment_path = "shaders/StandardShading.fragmentshader",
+	const vector<string> & uniforms = vector<string> {
+		"MVP",
+		"V",
+		"M",
+		"light_position_worldspace",
+		"diffuse_texture",
+		"light_color",
+		"light_power",
+		"material_ambient_color_ratio",
+		"material_specular_color",
+		"material_specular_ratio"
+	});
+
+	virtual shared_ptr<StandardModel> getInstance(const shared_ptr<Spirit>& p_spirit, GLuint p_texture_id, const shared_ptr<PhoneMaterial> p_material) const {
+		return shared_ptr<StandardModel>(new StandardModel(gl_obj, shader_ptr, draw_vec, draw_obj, p_spirit, setter, p_texture_id, p_material));
+	}
+
+	virtual void draw() const;
+
+protected:
+	StandardModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vector<string>& p_draw_vec,
+	              const string& p_draw_obj): Model{p_obj, p_shader, p_draw_vec, p_draw_obj, Setter::getSetter()} {}
+	StandardModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vector<string>& p_draw_vec,
+	              const string& p_draw_obj, const shared_ptr<Spirit>& p_spirit, const shared_ptr<Setter>& p_setter_ptr, GLuint p_texture_id,
+	              const shared_ptr<PhoneMaterial>& p_material): Model{p_obj, p_shader, p_spirit, p_draw_vec, p_draw_obj, p_setter_ptr},
+		texture_id{p_texture_id}, material{p_material} {}
+
+protected:
+	GLuint texture_id;
+	const shared_ptr<PhoneMaterial> material;
+};
+
+class NormalMappingModel: public StandardModel {
+public:
+	static shared_ptr<NormalMappingModel> initModel(const string& obj_path, const vector<pair<string, string>>& p_textures,
+	        const string &vertex_path = "shaders/NormalMapping.vertexshader",
+	        const string &fragment_path = "shaders/NormalMapping.fragmentshader",
+	const vector<string>& uniforms = vector<string> {
+		"diffuse_texture",
+		"normal_texture",
+		"specular_texture",
+		"MVP",
+		"V",
+		"M",
+		"MV3x3",
+		"light_position_worldspace",
+		"light_color",
+		"light_power",
+		"material_ambient_color_ratio",
+		"material_specular_color",
+		"material_specular_ratio"
+	});
+
+	virtual shared_ptr<NormalMappingModel> getInstance(const shared_ptr<Spirit>& p_spirit, GLuint p_texture_id, GLuint p_normal_id,
+	        GLuint p_specular_id, const shared_ptr<PhoneMaterial>& p_material) const {
+		return shared_ptr<NormalMappingModel>(new NormalMappingModel(gl_obj, shader_ptr, draw_vec, draw_obj, setter, p_spirit, p_texture_id,
+		                                      p_normal_id, p_specular_id, p_material));
+	}
+
+	virtual void draw() const;
+
+protected:
+	NormalMappingModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vector<string>& p_draw_vec,
+	                   const string& p_draw_obj): StandardModel{p_obj, p_shader, p_draw_vec, p_draw_obj} {}
+	NormalMappingModel(const shared_ptr<GLObj>& p_obj, const shared_ptr<GLShader>& p_shader, const vector<string>& p_draw_vec,
+	                   const string& p_draw_obj, const shared_ptr<Setter>& p_setter_ptr, const shared_ptr<Spirit>& p_spirit, GLuint p_texture_id, GLuint p_normal_id,
+	                   GLuint p_specular_id, const shared_ptr<PhoneMaterial>& p_material): StandardModel{p_obj, p_shader, p_draw_vec, p_draw_obj, p_spirit, p_setter_ptr,
+		                           p_texture_id, p_material}, normal_id{p_normal_id}, specular_id{p_specular_id} {}
+
+protected:
+	GLuint normal_id, specular_id;
+};
+
+}
+
+#endif
